@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'; // ลบ route, navigation
+import React, { useState, useEffect } from 'react'; 
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import ExpenseScreen from './ExpenseScreen';
 import IncomeScreen from './IncomeScreen';

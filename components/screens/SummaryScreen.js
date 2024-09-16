@@ -1,47 +1,114 @@
-import React from 'react';
-import { View, Text, Dimensions, StyleSheet } from 'react-native';
-import { PieChart } from 'react-native-chart-kit';
+import React, { useState, useEffect } from 'react'; 
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import IncomeSummaryScreen from './IncomeSummaryScreen';
+import ExpenseSummaryScreen from './ExpenseSummaryScreen';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const SummaryScreen = () => {
-  const data = [
-    { name: 'รายจ่าย', amount: 1500, color: '#ff3b30', legendFontColor: '#7F7F7F', legendFontSize: 15 },
-    { name: 'รายรับ', amount: 3500, color: '#34c759', legendFontColor: '#7F7F7F', legendFontSize: 15 },
-  ];
+const loadTransactions = async (type) => {
+  try {
+    const data = await AsyncStorage.getItem(type);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('Error loading data:', error);
+    return [];
+  }
+};
+
+const SummaryScreen = ({ route }) => {
+  const [isShowingExpenses, setIsShowingExpenses] = useState(true);
+  const [expense, setExpense] = useState([]);
+  const [income, setIncome] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const expenseData = await loadTransactions('expense');
+      setExpense(expenseData);
+      const incomeData = await loadTransactions('income');
+      setIncome(incomeData);
+    };
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    if (route.params?.transaction) {
+      const { title, amount } = route.params.transaction;
+      const type = route.params.type;
+      if (type === 'expense') {
+        setExpense(prevExpense => [...prevExpense, { title, amount }]);
+        saveTransaction({ title, amount }, 'expense');
+      } else if (type === 'income') {
+        setIncome(prevIncome => [...prevIncome, { title, amount }]);
+        saveTransaction({ title, amount }, 'income');
+      }
+      // Clear route params
+      route.params = {};
+    }
+  }, [route.params?.transaction, route.params?.type]);
+
+  const saveTransaction = async (transaction, type) => {
+    try {
+      if (!transaction.title || transaction.amount === undefined) {
+        console.error('Transaction data is incomplete:', transaction);
+        return;
+      }
+  
+      const existingData = await AsyncStorage.getItem(type);
+      const currentData = existingData ? JSON.parse(existingData) : [];
+      const updatedData = [...currentData, transaction];
+      await AsyncStorage.setItem(type, JSON.stringify(updatedData));
+    } catch (error) {
+      console.error('Error saving transaction:', error);
+    }
+  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>สรุปการใช้จ่าย</Text>
-      <PieChart
-        data={data}
-        width={Dimensions.get('window').width - 40}
-        height={220}
-        chartConfig={{
-          backgroundColor: '#1cc910',
-          backgroundGradientFrom: '#eff3ff',
-          backgroundGradientTo: '#efefef',
-          color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-        }}
-        accessor="amount"
-        backgroundColor="transparent"
-        paddingLeft="15"
-        absolute
-      />
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={[styles.tab, isShowingExpenses && styles.activeTab]}
+          onPress={() => setIsShowingExpenses(true)}>
+          <Text style={styles.tabText}>รายจ่าย</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, !isShowingExpenses && styles.activeTab]}
+          onPress={() => setIsShowingExpenses(false)}>
+          <Text style={styles.tabText}>รายรับ</Text>
+        </TouchableOpacity>
+      </View>
+      {isShowingExpenses ? (
+        <ExpenseSummaryScreen expense={expense} />
+      ) : (
+        <IncomeSummaryScreen income={income} />
+      )}
     </View>
   );
 };
 
-export default SummaryScreen;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     padding: 20,
+    backgroundColor: '#F7F7F7',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     marginBottom: 20,
   },
+  tab: {
+    padding: 10,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+    paddingTop:60,
+  },
+  activeTab: {
+    borderBottomColor: 'black',
+  },
+  tabText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
 });
+
+export default SummaryScreen;

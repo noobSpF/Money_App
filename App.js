@@ -30,8 +30,8 @@ const TabNavigator = () => (
           label = 'หน้าแรก';
         } else if (route.name === 'เพิ่ม') {
           label = 'เพิ่ม';
-        } else if (route.name === 'เป้าหมาย'){
-          label = 'เป้าหมาย';
+        } else if (route.name === 'สรุป'){
+          label = 'สรุป';
         }
         return <Text style={{ color: focused ? '#ff3b30' : 'gray', fontSize: 16 }}>{label}</Text>;
       },
@@ -43,7 +43,7 @@ const TabNavigator = () => (
   >
     <Tab.Screen name="หน้าแรก" component={StackNavigator} />
     <Tab.Screen name="เพิ่ม" component={AddTransactionScreen} />
-    <Tab.Screen name="เป้าหมาย" component={SummaryScreen} />
+    <Tab.Screen name="สรุป" component={SummaryScreen} />
   </Tab.Navigator>
 );
 
