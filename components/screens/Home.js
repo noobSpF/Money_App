@@ -64,25 +64,27 @@ const HomeScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={styles.header}>
+      <View style={styles.tabContainer}>
         <TouchableOpacity
-          style={[styles.tab, isShowingExpenses && styles.activeTab]}
+          style={[styles.tab, isShowingExpenses && styles.activeTabExpense]}
           onPress={() => setIsShowingExpenses(true)}>
-          <Text style={styles.tabText}>รายจ่าย</Text>
+          <Text style={[styles.tabText, isShowingExpenses && styles.activeText]}>รายจ่าย</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, !isShowingExpenses && styles.activeTab]}
+          style={[styles.tab, !isShowingExpenses && styles.activeTabIncome]}
           onPress={() => setIsShowingExpenses(false)}>
-          <Text style={styles.tabText}>รายรับ</Text>
+          <Text style={[styles.tabText, !isShowingExpenses && styles.activeText]}>รายรับ</Text>
         </TouchableOpacity>
       </View>
-      {isShowingExpenses ? (
-        <ExpenseScreen expense={expense} setExpense={setExpense} />
-      ) : (
-        <IncomeScreen income={income} setIncome={setIncome}/>
-      )}
     </View>
-  );
+    {isShowingExpenses ? (
+      <ExpenseScreen expense={expense} setExpense={setExpense} />
+    ) : (
+      <IncomeScreen income={income} setIncome={setIncome}/>
+    )}
+  </View>
+);
 };
 
 const styles = StyleSheet.create({
@@ -96,19 +98,39 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 20,
   },
-  tab: {
-    padding: 10,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
+  tabContainer: {
+    flexDirection: 'row',
+    borderWidth: 2,
+    borderColor: 'black',
+    borderRadius: 10,
+    overflow: 'hidden',
+    width: 250,
   },
-  activeTab: {
-    borderBottomColor: 'black',
+  tab: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 30,
+  },
+  activeTabExpense: {
+    backgroundColor: 'black',
+    borderBottomLeftRadius: 7,
+    borderTopLeftRadius: 7,
+  },
+  activeTabIncome: {
+    backgroundColor: 'black',
+    borderBottomRightRadius: 7,
+    borderTopRightRadius: 7,
+  },
+  activeText: {
+    color: 'white',
   },
   tabText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: 'black',
   },
 });
+
 
 export default HomeScreen;

@@ -2,7 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Text } from 'react-native';
+import { Text, StyleSheet} from 'react-native';
 
 import SummaryScreen from './components/screens/SummaryScreen';
 import AddTransactionScreen from './components/screens/AddTransactionScreen';
@@ -13,7 +13,9 @@ const Stack = createStackNavigator();
 
 const StackNavigator = () => (
   <Stack.Navigator>
-    <Stack.Screen name="HomeScreen" component={HomeScreen} />
+    <Stack.Screen name="HomeScreen" component={HomeScreen} 
+    options={{ headerTitle: () => <Text style={styles.headerTitle}>ผู้จัดการเงิน</Text>, 
+    headerTitleAlign: 'center', headerStyle: { height: 100 }}}  />
     <Stack.Screen name="AddTransaction" component={AddTransactionScreen} />
     <Stack.Screen name="Addexpense" component={AddTransactionScreen} />
     <Stack.Screen name="Addincome" component={AddTransactionScreen} />
@@ -54,5 +56,12 @@ const App = () => {
     </NavigationContainer>
   );
 };
+
+const styles = StyleSheet.create({
+  headerTitle: {
+    fontSize: 20,
+    color: 'black',
+  },
+});
 
 export default App;
