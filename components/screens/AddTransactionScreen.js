@@ -1,89 +1,89 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Keyboard, TouchableWithoutFeedback, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, Button, StyleSheet, Keyboard, TouchableWithoutFeedback, TouchableOpacity, ScrollView, Alert, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { app, db } from '../../firebase'; // เส้นทางที่ถูกต้องไปยังไฟล์ firebase.js
+import { collection, getDocs, addDoc } from 'firebase/firestore'  ;
+
 
 // ฟังก์ชันสำหรับบันทึกรายการ
-const saveTransaction = async (transaction, type) => {
+const saveTransaction = async (transaction, type, navigation) => {
   try {
-    const { title, amount } = transaction; // รับค่า title และ amount จาก transaction
-    const transactionData = { title, amount: parseFloat(amount) }; // เปลี่ยน amount เป็น float
+    const { title, amount } = transaction;
+    const transactionData = { title, amount: parseFloat(amount) };
+
     const existingData = await AsyncStorage.getItem(type);
     const currentData = existingData ? JSON.parse(existingData) : [];
-    const updatedData = [...currentData, transactionData];
-    await AsyncStorage.setItem(type, JSON.stringify(updatedData));
-    console.log('Transaction saved:', updatedData); // ตรวจสอบข้อมูลที่บันทึก
+    const isDuplicate = currentData.some(item => item.title === transaction.title && item.amount === transaction.amount);
+
+    if (!isDuplicate) {
+      const updatedData = [...currentData, transactionData];
+      await AsyncStorage.setItem(type, JSON.stringify(updatedData));
+      console.log('Transaction saved:', updatedData);
+
+      // บันทึกลง Firestore
+      //await db.collection(type === 'expense' ? 'Expenses' : 'Incomes').add(transactionData);
+      await addDoc(collection(db, type === 'expense' ? 'Expenses' : 'Incomes'), transactionData);
+
+      navigation.navigate('HomeScreen', {
+        transaction: transactionData,
+        type
+      });
+    } else {
+      Alert.alert('ข้อมูลซ้ำ', 'รายการนี้มีอยู่แล้ว');
+    }
   } catch (error) {
     console.error('Error saving transaction:', error);
   }
 };
 
-const AddTransactionScreen = ({ route, navigation }) => {
+const AddTransactionScreen = ({ navigation }) => {
   const [isShowingExpenses, setIsShowingExpenses] = useState(true);
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
+  const [expenseCategories, setExpenseCategories] = useState([]);
+  const [incomeCategories, setIncomeCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null); // สถานะสำหรับเก็บหมวดหมู่ที่เลือก
 
-  // หมวดหมู่สำหรับรายจ่าย
-  const expenseCategories = [
-    'ค่าอาหาร',
-    'ค่าเดินทาง',
-    'สังคม',
-    'ค่าเช่าบ้าน',
-    'แฟชั่น',
-    'สุขภาพ',
-    'สิ่งของ',
-  ];
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        // ใช้ getDocs และ collection เพื่อดึงข้อมูลจาก Firestore
+        const expenseSnapshot = await getDocs(collection(db, 'ExpenseCategories'));
+        const expenses = expenseSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-  // หมวดหมู่สำหรับรายรับ
-  const incomeCategories = [
-    'เงินเดือน',
-    'โบนัส',
-    'เงินปันผล',
-    'รายได้จากงานเสริม',
-  ];
+        const incomeSnapshot = await getDocs(collection(db, 'IncomeCategories'));
+        const incomes = incomeSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-  // เลือกหมวดหมู่ที่จะแสดงตามประเภทที่เลือก
+        setExpenseCategories(expenses);
+        setIncomeCategories(incomes);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
   const categories = isShowingExpenses ? expenseCategories : incomeCategories;
 
   const handleSave = async () => {
-  if (title && amount) {
-    const transaction = { title, amount: parseFloat(amount) };
-    const type = isShowingExpenses ? 'expense' : 'income';
-    
-    try {
-      const existingData = await AsyncStorage.getItem(type);
-      const currentData = existingData ? JSON.parse(existingData) : [];
-      
-      // ตรวจสอบว่า transaction นี้มีอยู่แล้วใน currentData หรือไม่
-      const isDuplicate = currentData.some(item => item.title === transaction.title && item.amount === transaction.amount);
-      
-      if (!isDuplicate) {
-        const updatedData = [...currentData, transaction];
-        await AsyncStorage.setItem(type, JSON.stringify(updatedData));
-        console.log('Transaction saved:', updatedData);
+    if (title && amount && selectedCategory) { // ตรวจสอบว่าหมวดหมู่ถูกเลือกด้วย
+      const transaction = { title, amount: parseFloat(amount), category: selectedCategory.name }; // บันทึกหมวดหมู่
+      const type = isShowingExpenses ? 'expense' : 'income';
 
-        // Navigate to HomeScreen with updated data
-        navigation.navigate('HomeScreen', {
-          transaction,
-          type
-        });
-
-        setTitle('');
-        setAmount('');
-      } else {
-        alert('รายการนี้มีอยู่แล้ว');
-      }
-    } catch (error) {
-      console.error('Error saving transaction:', error);
+      await saveTransaction(transaction, type, navigation);
+      
+      setTitle('');
+      setAmount('');
+      setSelectedCategory(null); // รีเซ็ตหมวดหมู่ที่เลือก
+    } else {
+      Alert.alert('ข้อมูลไม่ครบ', 'กรุณากรอกข้อมูลให้ครบถ้วน');
     }
-  } else {
-    alert('กรุณากรอกข้อมูลให้ครบถ้วน');
-  }
-};
+  };
 
-
-  // ฟังก์ชันสำหรับการเลือก Category
   const handleCategorySelect = (category) => {
-    setTitle(category); // ตั้งค่าช่องชื่อรายการเป็น Category ที่เลือก
+    setSelectedCategory(category); // ตั้งค่าหมวดหมู่ที่เลือก
+    setTitle(category.name); // ตั้งค่าช่องชื่อรายการเป็น Category ที่เลือก
   };
 
   return (
@@ -104,13 +104,20 @@ const AddTransactionScreen = ({ route, navigation }) => {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.category}>
-          {categories.map((category, index) => (
-            <TouchableOpacity key={index} style={styles.categoryButton} onPress={() => handleCategorySelect(category)}>
-              <Text style={styles.categoryText}>{category}</Text>
+        <ScrollView contentContainerStyle={styles.categoryContainer}>
+          {categories.map((category) => (
+            <TouchableOpacity 
+              key={category.id} 
+              style={[styles.categoryButton, selectedCategory?.id === category.id && styles.selectedCategory]} 
+              onPress={() => handleCategorySelect(category)}
+            >
+              <Text style={styles.categoryText}>{category.name}</Text>
+              {category.imageUrl && (
+                <Image source={{ uri: category.imageUrl }} style={styles.categoryImage} />
+              )}
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
 
         <Text style={styles.label}>ชื่อรายการ:</Text>
         <TextInput
@@ -145,7 +152,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 20,
   },
-  category: {
+  categoryContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-around',
@@ -156,6 +163,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#e0e0e0',
     borderRadius: 8,
     margin: 5,
+  },
+  selectedCategory: {
+    backgroundColor: '#b0e0e6', // สีสำหรับหมวดหมู่ที่เลือก
   },
   categoryText: {
     fontSize: 16,
@@ -183,6 +193,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#333',
+  },
+  categoryImage: {
+    width: 50, // กำหนดความกว้าง
+    height: 50, // กำหนดความสูง
+    borderRadius: 8, // ทำให้ภาพมุมมน
+    marginTop: 5, // ระยะห่างระหว่างชื่อและภาพ
   },
 });
 

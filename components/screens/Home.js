@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import ExpenseScreen from './ExpenseScreen';
 import IncomeScreen from './IncomeScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import firebase from '@react-native-firebase/app';
+
 
 // ฟังก์ชันสำหรับโหลดรายการ
 const loadTransactions = async (type) => {

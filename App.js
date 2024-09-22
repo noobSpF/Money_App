@@ -3,6 +3,11 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Text, StyleSheet} from 'react-native';
+import firebase from '@react-native-firebase/app';
+import '@react-native-firebase/app';
+
+
+
 
 import SummaryScreen from './components/screens/SummaryScreen';
 import AddTransactionScreen from './components/screens/AddTransactionScreen';

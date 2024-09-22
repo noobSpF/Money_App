@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "264953065855",
+    "project_id": "moneybroapp-6bbdb",
+    "storage_bucket": "moneybroapp-6bbdb.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:264953065855:android:fb660269f344578684aa4a",
+        "android_client_info": {
+          "package_name": "MoneyBroApp.com"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAh7hhx__hRqDAYh_mWYHlB5Al3QlSVM5w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
