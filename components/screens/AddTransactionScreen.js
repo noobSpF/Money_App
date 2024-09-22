@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Keyboard, TouchableWithoutFeedback, TouchableOpacity, ScrollView, Alert, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { app, db } from '../../firebase'; // เส้นทางที่ถูกต้องไปยังไฟล์ firebase.js
-import { collection, getDocs, addDoc } from 'firebase/firestore'  ;
+import { collection, getDocs, addDoc } from 'firebase/firestore';
 
 
 // ฟังก์ชันสำหรับบันทึกรายการ
@@ -72,7 +72,7 @@ const AddTransactionScreen = ({ navigation }) => {
       const type = isShowingExpenses ? 'expense' : 'income';
 
       await saveTransaction(transaction, type, navigation);
-      
+
       setTitle('');
       setAmount('');
       setSelectedCategory(null); // รีเซ็ตหมวดหมู่ที่เลือก
@@ -90,31 +90,31 @@ const AddTransactionScreen = ({ navigation }) => {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity
-            style={[styles.tab, isShowingExpenses && styles.activeTab]}
-            onPress={() => setIsShowingExpenses(true)}
-          >
-            <Text style={styles.tabText}>รายจ่าย</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, !isShowingExpenses && styles.activeTab]}
-            onPress={() => setIsShowingExpenses(false)}
-          >
-            <Text style={styles.tabText}>รายรับ</Text>
-          </TouchableOpacity>
+          <View style={styles.tabContainer}>
+            <TouchableOpacity
+              style={[styles.tab, isShowingExpenses && styles.activeTabExpense]}
+              onPress={() => setIsShowingExpenses(true)}>
+              <Text style={[styles.tabText, isShowingExpenses && styles.activeText]}>รายจ่าย</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tab, !isShowingExpenses && styles.activeTabIncome]}
+              onPress={() => setIsShowingExpenses(false)}>
+              <Text style={[styles.tabText, !isShowingExpenses && styles.activeText]}>รายรับ</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <ScrollView contentContainerStyle={styles.categoryContainer}>
           {categories.map((category) => (
-            <TouchableOpacity 
-              key={category.id} 
-              style={[styles.categoryButton, selectedCategory?.id === category.id && styles.selectedCategory]} 
+            <TouchableOpacity
+              key={category.id}
+              style={[styles.categoryButton, selectedCategory?.id === category.id && styles.selectedCategory]}
               onPress={() => handleCategorySelect(category)}
             >
-              <Text style={styles.categoryText}>{category.name}</Text>
               {category.imageUrl && (
                 <Image source={{ uri: category.imageUrl }} style={styles.categoryImage} />
               )}
+              <Text style={styles.categoryText}>{category.name}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -143,20 +143,19 @@ const AddTransactionScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: 70,
     padding: 20,
-    paddingTop: 1,
+    paddingTop: 20,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: 10,
   },
   categoryContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-around',
-    marginBottom: 20,
+    marginBottom: 10,
   },
   categoryButton: {
     padding: 10,
@@ -165,10 +164,51 @@ const styles = StyleSheet.create({
     margin: 5,
   },
   selectedCategory: {
-    backgroundColor: '#b0e0e6', // สีสำหรับหมวดหมู่ที่เลือก
+    backgroundColor: 'gray',
+    borderColor: 'black',
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 2,
   },
   categoryText: {
+    fontSize: 10,
+    textAlign: 'center',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    borderWidth: 2,
+    borderColor: 'black',
+    borderRadius: 10,
+    overflow: 'hidden',
+    width: 250,
+    justifyContent: 'center',
+  },
+  tab: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 30,
+  },
+  activeTabExpense: {
+    backgroundColor: 'black',
+    borderBottomLeftRadius: 7,
+    borderTopLeftRadius: 7,
+  },
+  activeTabIncome: {
+    backgroundColor: 'black',
+    borderBottomRightRadius: 7,
+    borderTopRightRadius: 7,
+  },
+  activeText: {
+    color: 'white',
+  },
+  tabText: {
     fontSize: 16,
+    fontWeight: 'bold',
+    color: 'black',
   },
   label: {
     fontSize: 18,
@@ -180,19 +220,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 20,
     paddingHorizontal: 10,
-  },
-  tab: {
-    padding: 10,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  activeTab: {
-    borderBottomColor: 'black',
-  },
-  tabText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
   },
   categoryImage: {
     width: 50, // กำหนดความกว้าง

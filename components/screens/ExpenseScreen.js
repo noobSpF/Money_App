@@ -24,7 +24,7 @@ const ExpenseScreen = ({ expense, setExpense }) => {
   return (
     <View style={styles.container}>
       {expense.length === 0 ? (
-        <Text>ไม่มีรายจ่าย</Text>
+        <Text style={styles.text}>ไม่มีรายจ่าย</Text>
       ) : (
         <FlatList
           data={expense}
@@ -76,6 +76,11 @@ const styles = StyleSheet.create({
     color: 'red',
     fontWeight: 'bold',
   },
+  text: {
+    textAlign: 'center',
+    fontSize: 20,
+    color: 'red',
+  }
 });
 
 export default ExpenseScreen;

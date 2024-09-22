@@ -2,9 +2,9 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Text, StyleSheet} from 'react-native';
-import firebase from '@react-native-firebase/app';
+import { Text, StyleSheet } from 'react-native';
 import '@react-native-firebase/app';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 
 
@@ -18,10 +18,9 @@ const Stack = createStackNavigator();
 
 const StackNavigator = () => (
   <Stack.Navigator>
-    <Stack.Screen name="HomeScreen" component={HomeScreen} 
-    options={{ headerTitle: () => <Text style={styles.headerTitle}>ผู้จัดการเงิน</Text>, 
-    headerTitleAlign: 'center', headerStyle: { height: 100 }}}  />
-    <Stack.Screen name="AddTransaction" component={AddTransactionScreen} />
+    <Stack.Screen name="ผู้จัดการเงิน" component={HomeScreen} 
+    options={{ headerTitleAlign: 'center',  headerStyle: { height: 100 },}} />
+    <Stack.Screen name="เพิ่ม" component={AddTransactionScreen} />
     <Stack.Screen name="Addexpense" component={AddTransactionScreen} />
     <Stack.Screen name="Addincome" component={AddTransactionScreen} />
     <Stack.Screen name="SummaryScreen" component={SummaryScreen} />
@@ -37,19 +36,21 @@ const TabNavigator = () => (
           label = 'หน้าแรก';
         } else if (route.name === 'เพิ่ม') {
           label = 'เพิ่ม';
-        } else if (route.name === 'สรุป'){
+        } else if (route.name === 'สรุป') {
           label = 'สรุป';
         }
         return <Text style={{ color: focused ? '#ff3b30' : 'gray', fontSize: 16 }}>{label}</Text>;
       },
       tabBarActiveTintColor: '#ff3b30',
       tabBarInactiveTintColor: 'gray',
-      tabBarStyle: { height: 60, paddingBottom: 10 },
-      headerShown: false,
+      tabBarStyle: { height: 60, paddingBottom: 10},
     })}
   >
-    <Tab.Screen name="หน้าแรก" component={StackNavigator} />
-    <Tab.Screen name="เพิ่ม" component={AddTransactionScreen} />
+    <Tab.Screen name="หน้าแรก" component={StackNavigator} 
+    options={{ headerShown: false, tabBarIcon: ({ color }) => (<Icon name="home" size={24} color={color} /> )}} />
+    <Tab.Screen name="เพิ่ม" component={AddTransactionScreen} 
+    options={{ headerShown: true , headerTitle: 'เพิ่ม', tabBarLabel: () => null, headerTitleAlign: 'center',  headerStyle: { height: 100 },
+    tabBarIcon: ({ color }) => (<Icon name="add-circle-outline" size={50} color={color} /> )}} />
     <Tab.Screen name="สรุป" component={SummaryScreen} />
   </Tab.Navigator>
 );

@@ -40,7 +40,7 @@ const IncomeScreen = ({ income, setIncome }) => {
   return (
     <View style={styles.container}>
       {income.length === 0 ? (
-        <Text>ไม่มีรายรับ</Text>
+        <Text style={styles.text}>ไม่มีรายรับ</Text>
       ) : (
         <FlatList
           data={income}
@@ -102,4 +102,9 @@ const styles = StyleSheet.create({
     color: 'red',
     fontWeight: 'bold',
   },
+  text: {
+    textAlign: 'center',
+    fontSize: 20,
+    color: 'red',
+  }
 });
