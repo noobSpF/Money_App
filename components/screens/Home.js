@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import ExpenseScreen from './ExpenseScreen';
 import IncomeScreen from './IncomeScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import firebase from '@react-native-firebase/app';
+
 
 
 // ฟังก์ชันสำหรับโหลดรายการ
@@ -18,7 +18,7 @@ const loadTransactions = async (type) => {
 };
 
 
-const HomeScreen = ({ route, navigation }) => {
+const HomeScreen = ({ route }) => {
   const [isShowingExpenses, setIsShowingExpenses] = useState(true);
   const [expense, setExpense] = useState([]);
   const [income, setIncome] = useState([]);
@@ -26,27 +26,44 @@ const HomeScreen = ({ route, navigation }) => {
   useEffect(() => {
     const fetchData = async () => {
         const expenseData = await loadTransactions('expense');
-        setExpense(expenseData);
         const incomeData = await loadTransactions('income');
+        setExpense(expenseData);
         setIncome(incomeData);
       };
       fetchData();
     }, []);
-  useEffect(() => {
-    if (route.params?.transaction) {
-      const { title, amount } = route.params.transaction;
-      const type = route.params.type;
+
+    useEffect(() => {
+      if (route.params?.transaction) {
+        const { title, amount } = route.params.transaction;
+        const type = route.params.type;
+        const newTransaction = { title, amount };
+  
         if (type === 'expense') {
-          setExpense(prevExpense => [...prevExpense, { title, amount }]);
-          saveTransaction({ title, amount }, 'expense');
+          // ตรวจสอบว่าข้อมูลมีอยู่แล้วหรือไม่ก่อนเพิ่ม
+          setExpense(prevExpense => {
+            const isExist = prevExpense.some(item => item.title === title && item.amount === amount);
+            if (!isExist) {
+              saveTransaction(newTransaction, 'expense');
+              return [...prevExpense, newTransaction];
+            }
+            return prevExpense;
+          });
         } else if (type === 'income') {
-          setIncome(prevIncome => [...prevIncome, { title, amount }]);
-          saveTransaction({ title, amount }, 'income');
+          // ตรวจสอบว่าข้อมูลมีอยู่แล้วหรือไม่ก่อนเพิ่ม
+          setIncome(prevIncome => {
+            const isExist = prevIncome.some(item => item.title === title && item.amount === amount);
+            if (!isExist) {
+              saveTransaction(newTransaction, 'income');
+              return [...prevIncome, newTransaction];
+            }
+            return prevIncome;
+          });
         }
-              // Clear route params
-      route.params = {};
-    }
-  }, [route.params?.transaction, route.params?.type]);
+        // Clear route params
+        route.params = {};
+      }
+    }, [route.params]);
 
   const saveTransaction = async (transaction, type) => {
     try {
@@ -57,8 +74,12 @@ const HomeScreen = ({ route, navigation }) => {
   
       const existingData = await AsyncStorage.getItem(type);
       const currentData = existingData ? JSON.parse(existingData) : [];
-      const updatedData = [...currentData, transaction];
-      await AsyncStorage.setItem(type, JSON.stringify(updatedData));
+      const isExist = currentData.some(item => item.title === transaction.title && item.amount === transaction.amount);
+      
+      if (!isExist) {
+        const updatedData = [...currentData, transaction];
+        await AsyncStorage.setItem(type, JSON.stringify(updatedData));
+      }
     } catch (error) {
       console.error('Error saving transaction:', error);
     }

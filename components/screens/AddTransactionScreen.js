@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Keyboard, TouchableWithoutFeedback, TouchableOpacity, ScrollView, Alert, Image } from 'react-native';
+import React, { useState, useEffect, useRef} from 'react';
+import { View, Text, TextInput, Button, StyleSheet, Keyboard, TouchableWithoutFeedback, 
+  TouchableOpacity, ScrollView, Alert, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { app, db } from '../../firebase'; // เส้นทางที่ถูกต้องไปยังไฟล์ firebase.js
 import { collection, getDocs, addDoc } from 'firebase/firestore';
+import { useFocusEffect } from '@react-navigation/native';
 
 
 // ฟังก์ชันสำหรับบันทึกรายการ
@@ -24,7 +26,7 @@ const saveTransaction = async (transaction, type, navigation) => {
       //await db.collection(type === 'expense' ? 'Expenses' : 'Incomes').add(transactionData);
       await addDoc(collection(db, type === 'expense' ? 'Expenses' : 'Incomes'), transactionData);
 
-      navigation.navigate('HomeScreen', {
+      navigation.navigate('ผู้จัดการเงิน', {
         transaction: transactionData,
         type
       });
@@ -43,6 +45,26 @@ const AddTransactionScreen = ({ navigation }) => {
   const [expenseCategories, setExpenseCategories] = useState([]);
   const [incomeCategories, setIncomeCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null); // สถานะสำหรับเก็บหมวดหมู่ที่เลือก
+  const inputRef = useRef(null);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      // เมื่อเข้ามาที่หน้า "เพิ่ม" ให้คีย์บอร์ดโผล่ขึ้นมาโดยโฟกัสที่ TextInput
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, [])
+  );
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      setSelectedCategory(null); // รีเซ็ตสถานะเมื่อเข้าหน้า
+      setTitle(''); // รีเซ็ต title
+      setAmount(''); // รีเซ็ต amount
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -87,10 +109,13 @@ const AddTransactionScreen = ({ navigation }) => {
   };
 
   return (
+    <KeyboardAvoidingView style={{ flex: 1 }}
+    behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // ใช้ 'height' สำหรับ Android
+    keyboardVerticalOffset={Platform.OS === 'ios' ? 30 : 100}>
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <View style={styles.tabContainer}>
+          <View style={styles.tabContainer}>  
             <TouchableOpacity
               style={[styles.tab, isShowingExpenses && styles.activeTabExpense]}
               onPress={() => setIsShowingExpenses(true)}>
@@ -108,7 +133,7 @@ const AddTransactionScreen = ({ navigation }) => {
           {categories.map((category) => (
             <TouchableOpacity
               key={category.id}
-              style={[styles.categoryButton, selectedCategory?.id === category.id && styles.selectedCategory]}
+              style={[styles.categoryButton, selectedCategory?.id === category.id && styles.selectedCategory,{ flexBasis: '23%', margin: '1%' }]}
               onPress={() => handleCategorySelect(category)}
             >
               {category.imageUrl && (
@@ -118,25 +143,20 @@ const AddTransactionScreen = ({ navigation }) => {
             </TouchableOpacity>
           ))}
         </ScrollView>
-
-        <Text style={styles.label}>ชื่อรายการ:</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="เช่น ค่าใช้จ่ายอาหาร"
-          value={title}
-          onChangeText={setTitle}
-        />
+        <View style={styles.numContainer}>  
         <Text style={styles.label}>จำนวนเงิน:</Text>
         <TextInput
           style={styles.input}
-          placeholder="0"
-          keyboardType="numeric"
+          TextInput ref={inputRef} placeholder="0" keyboardType="numeric"
           value={amount}
           onChangeText={setAmount}
+          onFocus={() => inputRef.current.focus()}
         />
         <Button title="บันทึก" onPress={handleSave} />
+        </View> 
       </View>
     </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -151,31 +171,37 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 10,
   },
+  numContainer: {
+    padding:10,
+  },
   categoryContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     marginBottom: 10,
   },
   categoryButton: {
-    padding: 10,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 8,
-    margin: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: 80,
+    height: 80,
   },
   selectedCategory: {
-    backgroundColor: 'gray',
-    borderColor: 'black',
+    backgroundColor: '#B7B7B7',
+    borderColor: 'transparent',
     borderWidth: 1,
+    borderRadius: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowOpacity: 1,
+    shadowRadius: 1,
     elevation: 2,
   },
   categoryText: {
     fontSize: 10,
     textAlign: 'center',
+    paddingTop: 8,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -222,10 +248,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   categoryImage: {
-    width: 50, // กำหนดความกว้าง
-    height: 50, // กำหนดความสูง
-    borderRadius: 8, // ทำให้ภาพมุมมน
-    marginTop: 5, // ระยะห่างระหว่างชื่อและภาพ
+    width: 40,
+    height: 30,
+    borderRadius: 8,
+    marginTop: 5, 
+
+
   },
 });
 
