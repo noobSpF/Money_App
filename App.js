@@ -24,6 +24,16 @@ const GoalStackNavigator = () => (
     <Stack.Screen name="AddGoalScreen" component={AddGoalScreen} />
   </Stack.Navigator>
 );
+const StackNavigator = () => (
+  <Stack.Navigator>
+    <Stack.Screen name="ผู้จัดการเงิน" component={HomeScreen} 
+    options={{ headerTitleAlign: 'center',  headerStyle: { height: 100 },}} />
+    <Stack.Screen name="เพิ่ม" component={AddTransactionScreen} />
+    <Stack.Screen name="Addexpense" component={AddTransactionScreen} />
+    <Stack.Screen name="Addincome" component={AddTransactionScreen} />
+    <Stack.Screen name="SummaryScreen" component={SummaryScreen} />
+  </Stack.Navigator>
+);
 
 // Bottom Tab Navigator
 const TabNavigator = () => {
@@ -68,8 +78,8 @@ const TabNavigator = () => {
     >
       <Tab.Screen 
         name="หน้าแรก" 
-        component={HomeScreen} 
-        options={{ headerShown: true,headerTitleAlign: 'center',headerTitle: 'ผู้จัดการเงิน', tabBarIcon: ({ color }) => (<Icon name="home" size={24} color={color} />) 
+        component={StackNavigator} 
+        options={{ headerShown: false,headerTitleAlign: 'center',headerTitle: 'ผู้จัดการเงิน', tabBarIcon: ({ color }) => (<Icon name="home" size={24} color={color} />) 
         }} 
       />
       <Tab.Screen 

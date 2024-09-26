@@ -1,171 +1,129 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image, TextInput, Alert, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { db } from '../../firebase'; // Ensure this is the correct path to Firebase
-import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../../firebase'; 
+import { collection, getDocs, updateDoc, addDoc, doc } from 'firebase/firestore';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import Icon from 'react-native-vector-icons/Ionicons'; // Import Ionicons from react-native-vector-icons
+import Icon from 'react-native-vector-icons/Ionicons'; 
 
 const AddGoalScreen = ({ navigation }) => {
-  const [goalAmount, setGoalAmount] = useState(''); // User input for goal amount
-  const [expenseCategories, setExpenseCategories] = useState([]); // List of expense categories
-  const [selectedCategory, setSelectedCategory] = useState(null); // Track selected category
-  const [endDate, setEndDate] = useState(new Date()); // Store the selected end date
-  const [showDatePicker, setShowDatePicker] = useState(false); // Control the date picker visibility
+  const [goalAmount, setGoalAmount] = useState(''); 
+  const [expenseCategories, setExpenseCategories] = useState([]); 
+  const [selectedCategory, setSelectedCategory] = useState(null); 
+  const [endDate, setEndDate] = useState(new Date()); 
+  const [showDatePicker, setShowDatePicker] = useState(false); 
 
-  // Calculate tomorrow's date
   const tomorrowDate = new Date();
-  tomorrowDate.setDate(tomorrowDate.getDate() + 1); // Move one day forward
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1); 
 
-  // Fetch categories from Firestore
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const expenseSnapshot = await getDocs(collection(db, 'ExpenseCategories'));
         const expenses = expenseSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setExpenseCategories(expenses); // Set the categories in state
+        setExpenseCategories(expenses); 
       } catch (error) {
         console.error('Error fetching categories:', error);
       }
     };
 
-    fetchCategories(); // Call the function to fetch categories
+    fetchCategories(); 
   }, []);
 
-  // Handle saving the goal (replaces existing goal)
   const handleSaveGoal = async () => {
     if (goalAmount && selectedCategory) {
-      const newGoal = {
-        id: Date.now().toString(), 
-        title: selectedCategory.name, 
-        amount: parseFloat(goalAmount), // เปลี่ยนเป็นตัวเลขแทน string
-        remainingAmount: parseFloat(goalAmount), // จำนวนเงินคงเหลือเท่ากับยอดตั้งต้น
-        date: endDate.toLocaleDateString('th-TH'), 
-        icon: selectedCategory.imageUrl, 
-        createdAt: new Date(), // บันทึกวันเวลาที่ตั้งเป้าหมาย
-      };
-  
-      let savedGoals = await AsyncStorage.getItem('goals');
-      savedGoals = savedGoals ? JSON.parse(savedGoals) : [];
-  
-      const updatedGoals = savedGoals.filter(goal => goal.title !== selectedCategory.name);
-      updatedGoals.push(newGoal);
-  
-      await AsyncStorage.setItem('goals', JSON.stringify(updatedGoals));
-  
-      navigation.navigate('GoalScreen', { refresh: true });
-  
-      setGoalAmount('');
-      setSelectedCategory(null);
-      setEndDate(new Date());
+      try {
+        const goalsSnapshot = await getDocs(collection(db, 'Goals'));
+        const goals = goalsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        const existingGoal = goals.find(goal => goal.title === selectedCategory.name);
+
+        if (existingGoal) {
+          // อัพเดตข้อมูลเป้าหมายที่มีอยู่
+          await updateDoc(doc(db, 'Goals', existingGoal.id), {
+            amount: parseFloat(goalAmount),
+            remainingAmount: parseFloat(goalAmount),
+            date: endDate.toLocaleDateString('th-TH'), 
+          });
+        } else {
+          // สร้างเป้าหมายใหม่
+          const newGoal = {
+            title: selectedCategory.name,
+            amount: parseFloat(goalAmount),
+            remainingAmount: parseFloat(goalAmount),
+            date: endDate.toLocaleDateString('th-TH'), 
+            icon: selectedCategory.imageUrl,
+            createdAt: new Date(), 
+          };
+
+          await addDoc(collection(db, 'Goals'), newGoal);
+        }
+
+        navigation.navigate('GoalScreen', { refresh: true });
+        setGoalAmount('');
+        setSelectedCategory(null);
+        setEndDate(new Date()); 
+      } catch (error) {
+        console.error('Error saving goal to Firestore:', error);
+        Alert.alert('Error', 'An error occurred while saving the goal.');
+      }
     } else {
       Alert.alert('ข้อมูลไม่ครบ', 'กรุณาเลือกหมวดหมู่และกรอกจำนวนเงิน');
     }
   };
-  const saveTransaction = async (transaction, type, navigation) => {
-    try {
-      const { title, amount } = transaction;
-      const transactionData = {
-        title,
-        amount: parseFloat(amount),
-        createdAt: new Date(), // บันทึกวันเวลาที่มีการเพิ่มรายจ่าย
-      };
-  
-      let existingData = await AsyncStorage.getItem(type);
-      existingData = existingData ? JSON.parse(existingData) : [];
-  
-      const updatedData = [...existingData, transactionData];
-      await AsyncStorage.setItem(type, JSON.stringify(updatedData));
-  
-      navigation.navigate('ผู้จัดการเงิน', {
-        transaction: transactionData,
-        type
-      });
-    } catch (error) {
-      console.error('Error saving transaction:', error);
-    }
-  };
-  const updateGoalRemainingAmount = async () => {
-    let savedGoals = await AsyncStorage.getItem('goals');
-    savedGoals = savedGoals ? JSON.parse(savedGoals) : [];
-  
-    let savedExpenses = await AsyncStorage.getItem('expense');
-    savedExpenses = savedExpenses ? JSON.parse(savedExpenses) : [];
-  
-    const updatedGoals = savedGoals.map(goal => {
-      const totalExpensesAfterGoal = savedExpenses
-        .filter(expense => expense.title === goal.title && new Date(expense.createdAt) > new Date(goal.createdAt))
-        .reduce((total, expense) => total + expense.amount, 0);
-  
-      return {
-        ...goal,
-        remainingAmount: goal.amount - totalExpensesAfterGoal,
-      };
-    });
-  
-    await AsyncStorage.setItem('goals', JSON.stringify(updatedGoals));
-  };
-  
-  
 
   const handleAddAmount = async () => {
     if (goalAmount && selectedCategory) {
-      let savedGoals = await AsyncStorage.getItem('goals');
-      savedGoals = savedGoals ? JSON.parse(savedGoals) : [];
-  
-      // Find the goal for this category
-      const existingGoal = savedGoals.find(goal => goal.title === selectedCategory.name);
-  
-      // If goal exists, add the new amount to both 'amount' and 'remainingAmount'
-      if (existingGoal) {
-        const updatedAmount = parseFloat(existingGoal.amount) + parseFloat(goalAmount);
-        const updatedRemainingAmount = parseFloat(existingGoal.remainingAmount) + parseFloat(goalAmount);
-  
-        existingGoal.amount = updatedAmount; // Update the total goal amount
-        existingGoal.remainingAmount = updatedRemainingAmount; // Update the remaining amount
-      } else {
-        // If no existing goal, create a new one with both 'amount' and 'remainingAmount' initialized
-        const newGoal = {
-          id: Date.now().toString(),
-          title: selectedCategory.name,
-          amount: parseFloat(goalAmount),
-          remainingAmount: parseFloat(goalAmount), // Set remaining amount initially the same as amount
-          date: new Date().toLocaleDateString('th-TH'),
-          icon: selectedCategory.imageUrl,
-          createdAt: new Date(), // Save the date the goal was created
-        };
-        savedGoals.push(newGoal);
+      try {
+        const goalsSnapshot = await getDocs(collection(db, 'Goals'));
+        const goals = goalsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        const existingGoal = goals.find(goal => goal.title === selectedCategory.name);
+
+        if (existingGoal) {
+          // เพิ่มจำนวนเงินในเป้าหมายที่มีอยู่
+          const updatedAmount = parseFloat(existingGoal.amount) + parseFloat(goalAmount);
+          const updatedRemainingAmount = parseFloat(existingGoal.remainingAmount) + parseFloat(goalAmount);
+
+          await updateDoc(doc(db, 'Goals', existingGoal.id), {
+            amount: updatedAmount,
+            remainingAmount: updatedRemainingAmount,
+          });
+
+          navigation.navigate('GoalScreen', { refresh: true });
+        } else {
+          await handleSaveGoal(); 
+        }
+
+        setGoalAmount('');
+        setSelectedCategory(null);
+      } catch (error) {
+        console.error('Error updating goal:', error);
+        Alert.alert('Error', 'An error occurred while updating the goal.');
       }
-  
-      // Save updated goals
-      await AsyncStorage.setItem('goals', JSON.stringify(savedGoals));
-  
-      // Navigate back to GoalScreen and trigger refresh
-      navigation.navigate('GoalScreen', { refresh: true });
-  
-      // Reset the form
-      setGoalAmount('');
-      setSelectedCategory(null);
     } else {
       Alert.alert('ข้อมูลไม่ครบ', 'กรุณาเลือกหมวดหมู่และกรอกจำนวนเงิน');
     }
   };
 
-  // Handle category selection
   const handleCategorySelect = (category) => {
-    setSelectedCategory(category); // Set selected category
+    setSelectedCategory(category); 
   };
 
-  // Handle showing the date picker
   const showDatepicker = () => {
     setShowDatePicker(true);
   };
 
-  // Handle date selection
   const onDateChange = (event, selectedDate) => {
-    setShowDatePicker(false); // Hide the date picker
+    setShowDatePicker(false); 
     if (selectedDate) {
-      setEndDate(selectedDate); // Set the selected date
+      setEndDate(selectedDate); 
     }
   };
 
@@ -176,7 +134,6 @@ const AddGoalScreen = ({ navigation }) => {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 30 : 100}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.container}>
-          {/* Category Section */}
           <Text style={styles.subTitle}>หมวดหมู่</Text>
           <ScrollView contentContainerStyle={styles.categoryContainer}>
             {expenseCategories.map((category) => (
@@ -195,7 +152,6 @@ const AddGoalScreen = ({ navigation }) => {
             ))}
           </ScrollView>
 
-          {/* Amount Section */}
           <View style={styles.amountContainer}>
             <Image source={require('../../assets/money-bag.png')} style={styles.moneyIcon} />
             <View style={styles.amountInputContainer}>
@@ -213,7 +169,6 @@ const AddGoalScreen = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-          {/* Date Picker Section */}
           <View style={styles.datePickerContainer}>
             <Text>วันที่สิ้นสุด: {endDate.toLocaleDateString('th-TH')}</Text>
             {showDatePicker && (
@@ -222,12 +177,11 @@ const AddGoalScreen = ({ navigation }) => {
                 mode="date"
                 display="default"
                 onChange={onDateChange}
-                minimumDate={tomorrowDate} // Only allow future dates starting from tomorrow
+                minimumDate={tomorrowDate} 
               />
             )}
           </View>
 
-          {/* Buttons */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.addButton} onPress={handleAddAmount}>
               <Text style={styles.buttonText}>เพิ่ม</Text>
@@ -248,12 +202,6 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 20,
     backgroundColor: '#f9f9f9',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
   },
   subTitle: {
     fontSize: 18,

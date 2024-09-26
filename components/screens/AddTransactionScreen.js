@@ -1,38 +1,38 @@
-import React, { useState, useEffect, useRef} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Keyboard, TouchableWithoutFeedback, 
   TouchableOpacity, ScrollView, Alert, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { app, db } from '../../firebase'; // เส้นทางที่ถูกต้องไปยังไฟล์ firebase.js
-import { collection, getDocs, addDoc } from 'firebase/firestore';
+import { app, db } from '../../firebase';
+import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { useFocusEffect } from '@react-navigation/native';
 
-
-// ฟังก์ชันสำหรับบันทึกรายการ
 const saveTransaction = async (transaction, type, navigation) => {
   try {
-    const { title, amount, note, time } = transaction;
+    const { title, amount } = transaction;
 
-    // แปลง amount เป็นตัวเลขและเพิ่ม note, time
+    // แปลงจำนวนเงินให้เป็นตัวเลข
     const transactionData = { 
       title, 
-      amount: parseFloat(amount), 
-      note: note || 'N/A',
-      time: time || new Date().toLocaleString()
+      amount: parseFloat(amount),
+      createdAt: new Date(),
     };
 
-    const existingData = await AsyncStorage.getItem(type);
-    const currentData = existingData ? JSON.parse(existingData) : [];
-    const isDuplicate = currentData.some(item => item.title === transaction.title && item.amount === transaction.amount && item.note === transaction.note && item.time === transaction.time
-    );
+    // ดึงข้อมูลเดิมจาก AsyncStorage
+    let existingData = await AsyncStorage.getItem(type);
+    existingData = existingData ? JSON.parse(existingData) : [];
 
+    // ตรวจสอบว่ามีรายการซ้ำกันหรือไม่
+    const isDuplicate = existingData.some(item => item.title === transaction.title && item.amount === transaction.amount);
     if (!isDuplicate) {
-      const updatedData = [...currentData, transactionData];
+      const updatedData = [...existingData, transactionData];
       await AsyncStorage.setItem(type, JSON.stringify(updatedData));
-      console.log('Transaction saved:', updatedData);
 
-      // บันทึกลง Firestore
-      await addDoc(collection(db, type === 'expense' ? 'Expenses' : 'Incomes'), transactionData);
+      // อัปเดตยอดเงินคงเหลือของเป้าหมาย หากเป็นรายการรายจ่าย
+      if (type === 'expense') {
+        await updateGoalRemainingAmount(transactionData);
+      }
 
+      // นำผู้ใช้กลับไปยังหน้าหลักหรือหน้าที่กำหนด
       navigation.navigate('ผู้จัดการเงิน', {
         transaction: transactionData,
         type
@@ -45,6 +45,34 @@ const saveTransaction = async (transaction, type, navigation) => {
   }
 };
 
+// ฟังก์ชันอัปเดตยอดเงินคงเหลือใน Firestore
+const updateGoalRemainingAmount = async (transaction) => {
+  const { title, amount } = transaction;
+
+  try {
+    // ดึงข้อมูลทั้งหมดจาก Firestore คอลเลกชัน 'Goals'
+    const goalsSnapshot = await getDocs(collection(db, 'Goals'));
+    const goals = goalsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    // ตรวจสอบว่าเป้าหมายในหมวดหมู่นี้มีอยู่หรือไม่
+    const existingGoal = goals.find(goal => goal.title === title);
+
+    if (existingGoal) {
+      // อัปเดตยอดเงินคงเหลือ
+      const updatedRemainingAmount = parseFloat(existingGoal.remainingAmount) - parseFloat(amount);
+
+      // อัปเดตเป้าหมายใน Firestore
+      await updateDoc(doc(db, 'Goals', existingGoal.id), {
+        remainingAmount: updatedRemainingAmount >= 0 ? updatedRemainingAmount : 0, // ป้องกันไม่ให้ยอดคงเหลือติดลบ
+      });
+    }
+  } catch (error) {
+    console.error('Error updating goal remaining amount:', error);
+  }
+};
 
 const AddTransactionScreen = ({ navigation }) => {
   const [isShowingExpenses, setIsShowingExpenses] = useState(true);
@@ -52,22 +80,20 @@ const AddTransactionScreen = ({ navigation }) => {
   const [amount, setAmount] = useState('');
   const [expenseCategories, setExpenseCategories] = useState([]);
   const [incomeCategories, setIncomeCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(null); // สถานะสำหรับเก็บหมวดหมู่ที่เลือก
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const inputRef = useRef(null);
   const [note, setNote] = useState('');
   const [time, setTime] = useState('');
 
-
   useFocusEffect(
     React.useCallback(() => {
-      // เมื่อเข้ามาที่หน้า "เพิ่ม" ให้คีย์บอร์ดโผล่ขึ้นมาโดยโฟกัสที่ TextInput
       if (inputRef.current) {
         inputRef.current.focus();
       }
     }, [])
   );
 
-  useEffect(() => { // useEffect นี้เอาไว้รีเซ็ตสถานะเมื่อเข้าหน้า
+  useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       setSelectedCategory(null); 
       setTitle('');
@@ -82,7 +108,6 @@ const AddTransactionScreen = ({ navigation }) => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        // ใช้ getDocs และ collection เพื่อดึงข้อมูลจาก Firestore
         const expenseSnapshot = await getDocs(collection(db, 'ExpenseCategories'));
         const expenses = expenseSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
@@ -102,11 +127,14 @@ const AddTransactionScreen = ({ navigation }) => {
   const categories = isShowingExpenses ? expenseCategories : incomeCategories;
 
   const handleSave = async () => {
-    if (title && amount && selectedCategory) { // ตรวจสอบว่าหมวดหมู่ถูกเลือกด้วย
-      const transaction = { title, amount: parseFloat(amount), 
+    if (title && amount && selectedCategory) { 
+      const transaction = { 
+        title, 
+        amount: parseFloat(amount), 
         category: selectedCategory.name, 
         note: note ? note : 'N/A', 
-        time: new Date().toLocaleTimeString() }; 
+        time: new Date().toLocaleTimeString() 
+      };
       const type = isShowingExpenses ? 'expense' : 'income';
 
       await saveTransaction(transaction, type, navigation);
@@ -114,20 +142,20 @@ const AddTransactionScreen = ({ navigation }) => {
       setTitle('');
       setAmount('');
       setNote('');
-      setSelectedCategory(null); // รีเซ็ตหมวดหมู่ที่เลือก
+      setSelectedCategory(null); 
     } else {
       Alert.alert('ข้อมูลไม่ครบ', 'กรุณากรอกข้อมูลให้ครบถ้วน');
     }
   };
 
   const handleCategorySelect = (category) => {
-    setSelectedCategory(category); // ตั้งค่าหมวดหมู่ที่เลือก
-    setTitle(category.name); // ตั้งค่าช่องชื่อรายการเป็น Category ที่เลือก
+    setSelectedCategory(category);
+    setTitle(category.name); 
   };
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }}
-    behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // ใช้ 'height' สำหรับ Android
+    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     keyboardVerticalOffset={Platform.OS === 'ios' ? 30 : 100}>
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={styles.container}>
@@ -164,7 +192,9 @@ const AddTransactionScreen = ({ navigation }) => {
         <Text style={styles.label}>จำนวนเงิน:</Text>
         <TextInput
           style={styles.input}
-          TextInput ref={inputRef} placeholder="0" keyboardType="numeric"
+          ref={inputRef} 
+          placeholder="0" 
+          keyboardType="numeric"
           value={amount}
           onChangeText={setAmount}
           onFocus={() => inputRef.current.focus()}
@@ -270,8 +300,6 @@ const styles = StyleSheet.create({
     height: 30,
     borderRadius: 8,
     marginTop: 5, 
-
-
   },
 });
 
