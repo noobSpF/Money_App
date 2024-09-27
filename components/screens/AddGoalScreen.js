@@ -1,38 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image, TextInput, Alert, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { db } from '../../firebase'; // Ensure this is the correct path to Firebase
-import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../../firebase'; 
+import { collection, getDocs, updateDoc, addDoc, doc } from 'firebase/firestore';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import Icon from 'react-native-vector-icons/Ionicons'; // Import Ionicons from react-native-vector-icons
+import Icon from 'react-native-vector-icons/Ionicons'; 
 
 const AddGoalScreen = ({ navigation }) => {
-  const [goalAmount, setGoalAmount] = useState(''); // User input for goal amount
-  const [expenseCategories, setExpenseCategories] = useState([]); // List of expense categories
-  const [selectedCategory, setSelectedCategory] = useState(null); // Track selected category
-  const [endDate, setEndDate] = useState(new Date()); // Store the selected end date
-  const [showDatePicker, setShowDatePicker] = useState(false); // Control the date picker visibility
+  const [goalAmount, setGoalAmount] = useState(''); 
+  const [expenseCategories, setExpenseCategories] = useState([]); 
+  const [selectedCategory, setSelectedCategory] = useState(null); 
+  const [endDate, setEndDate] = useState(new Date()); 
+  const [showDatePicker, setShowDatePicker] = useState(false); 
 
-  // Calculate tomorrow's date
   const tomorrowDate = new Date();
-  tomorrowDate.setDate(tomorrowDate.getDate() + 1); // Move one day forward
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1); 
 
-  // Fetch categories from Firestore
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const expenseSnapshot = await getDocs(collection(db, 'ExpenseCategories'));
         const expenses = expenseSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setExpenseCategories(expenses); // Set the categories in state
+        setExpenseCategories(expenses); 
       } catch (error) {
         console.error('Error fetching categories:', error);
       }
     };
 
-    fetchCategories(); // Call the function to fetch categories
+    fetchCategories(); 
   }, []);
 
-  // Handle saving the goal (replaces existing goal)
   const handleSaveGoal = async () => {
     if (goalAmount && selectedCategory) {
       const newGoal = {
@@ -58,6 +55,7 @@ const AddGoalScreen = ({ navigation }) => {
       setGoalAmount('');
       setSelectedCategory(null);
       setEndDate(new Date());
+
     } else {
       Alert.alert('ข้อมูลไม่ครบ', 'กรุณาเลือกหมวดหมู่และกรอกจำนวนเงิน');
     }
@@ -151,21 +149,18 @@ const AddGoalScreen = ({ navigation }) => {
     }
   };
 
-  // Handle category selection
   const handleCategorySelect = (category) => {
-    setSelectedCategory(category); // Set selected category
+    setSelectedCategory(category); 
   };
 
-  // Handle showing the date picker
   const showDatepicker = () => {
     setShowDatePicker(true);
   };
 
-  // Handle date selection
   const onDateChange = (event, selectedDate) => {
-    setShowDatePicker(false); // Hide the date picker
+    setShowDatePicker(false); 
     if (selectedDate) {
-      setEndDate(selectedDate); // Set the selected date
+      setEndDate(selectedDate); 
     }
   };
 
@@ -176,7 +171,6 @@ const AddGoalScreen = ({ navigation }) => {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 30 : 100}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.container}>
-          {/* Category Section */}
           <Text style={styles.subTitle}>หมวดหมู่</Text>
           <ScrollView contentContainerStyle={styles.categoryContainer}>
             {expenseCategories.map((category) => (
@@ -195,7 +189,6 @@ const AddGoalScreen = ({ navigation }) => {
             ))}
           </ScrollView>
 
-          {/* Amount Section */}
           <View style={styles.amountContainer}>
             <Image source={require('../../assets/money-bag.png')} style={styles.moneyIcon} />
             <View style={styles.amountInputContainer}>
@@ -216,7 +209,6 @@ const AddGoalScreen = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-          {/* Date Picker Section */}
           <View style={styles.datePickerContainer}>
             <Text>วันที่สิ้นสุด: {endDate.toLocaleDateString('th-TH')}</Text>
             {showDatePicker && (
@@ -225,12 +217,11 @@ const AddGoalScreen = ({ navigation }) => {
                 mode="date"
                 display="default"
                 onChange={onDateChange}
-                minimumDate={tomorrowDate} // Only allow future dates starting from tomorrow
+                minimumDate={tomorrowDate} 
               />
             )}
           </View>
 
-          {/* Buttons */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.addButton} onPress={handleAddAmount}>
               <Text style={styles.buttonText}>เพิ่ม</Text>
@@ -251,12 +242,6 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 20,
     backgroundColor: '#f9f9f9',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
   },
   subTitle: {
     fontSize: 18,

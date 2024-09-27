@@ -1,36 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useIsFocused } from '@react-navigation/native'; // Import this hook
+import { useIsFocused } from '@react-navigation/native';
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '../../firebase';
 
 const GoalScreen = ({ navigation, route }) => {
   const [goals, setGoals] = useState([]);
-  const isFocused = useIsFocused(); // To detect when the screen is focused
+  const isFocused = useIsFocused();
 
-  // Fetch goals from AsyncStorage
+  // ดึงข้อมูลเป้าหมายจาก Firestore
   useEffect(() => {
     const fetchGoals = async () => {
       try {
-        const savedGoals = await AsyncStorage.getItem('goals');
-        if (savedGoals !== null) {
-          setGoals(JSON.parse(savedGoals));
-        }
+        const querySnapshot = await getDocs(collection(db, 'Goals'));
+        const goalsData = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            date: data.date.toDate ? data.date.toDate().toLocaleDateString('th-TH') : data.date, // ตรวจสอบว่าเป็น Timestamp หรือ string แล้วแปลงเป็น Date
+          };
+        });
+        setGoals(goalsData);
       } catch (error) {
-        console.error('Error loading goals:', error);
+        console.error('เกิดข้อผิดพลาดในการดึงข้อมูล:', error);
       }
     };
 
-    // Call fetchGoals when screen is focused or when coming back with a refresh request
     if (isFocused || route.params?.refresh) {
       fetchGoals();
     }
-  }, [isFocused, route.params?.refresh]); // Depend on `isFocused` and `route.params?.refresh`
+  }, [isFocused, route.params?.refresh]);
 
-  // Handle deleting a goal
   const handleDeleteGoal = async (goal) => {
     Alert.alert(
       "ยืนยันการลบ",
-      `คุณต้องการลบเป้าหมาย ${goal.title} หรือไม่?`,
+      `คุณต้องการลบเป้าหมาย "${goal.title}" ใช่หรือไม่?`,
       [
         {
           text: "ยกเลิก",
@@ -41,7 +46,7 @@ const GoalScreen = ({ navigation, route }) => {
           onPress: async () => {
             const updatedGoals = goals.filter(g => g.id !== goal.id);
             setGoals(updatedGoals);
-            await AsyncStorage.setItem('goals', JSON.stringify(updatedGoals));
+            await deleteDoc(doc(db, 'Goals', goal.id)); // ลบข้อมูลจาก Firebase
           },
         },
       ],
@@ -49,14 +54,38 @@ const GoalScreen = ({ navigation, route }) => {
     );
   };
 
+  const getCategoryIcon = (categoryName) => {
+    switch (categoryName) {
+      case 'อาหาร':
+        return require('../../assets/Food-icon.png');
+      case 'การเดินทาง':
+        return require('../../assets/Transport-icon.png');
+      case 'แฟชั่น':
+        return require('../../assets/Fashion-icon.png');
+      case 'ที่อยู่อาศัย':
+        return require('../../assets/House-icon.png');
+      case 'สังคม':
+        return require('../../assets/Social-icon.png');
+      case 'สิ่งของ':
+        return require('../../assets/Items-icon.png');
+      case 'การศึกษา':
+        return require('../../assets/Edu-icon.png');
+      case 'สุขภาพ':
+        return require('../../assets/Health-icon.png');
+    }
+  };
+
   const renderGoalItem = ({ item }) => (
     <View style={styles.goalItem}>
-      <Image source={item.icon} style={styles.goalIcon} />
+      <Image 
+        source={getCategoryIcon(item.title)} 
+        style={styles.goalIcon} 
+      />
       <View style={styles.goalDetails}>
         <Text style={styles.goalTitle}>{item.title}</Text>
         <Text style={styles.goalAmount}>ยอดเงินเป้าหมาย: {item.amount} บาท</Text>
         <Text style={styles.goalAmount}>ยอดเงินคงเหลือ: {item.remainingAmount} บาท</Text>
-        <Text style={styles.goalDate}>{item.date}</Text>
+        <Text style={styles.goalDate}>วันที่สิ้นสุด: {item.date}</Text>
       </View>
       <TouchableOpacity onPress={() => handleDeleteGoal(item)}>
         <Text style={styles.deleteText}>ลบ</Text>
@@ -66,24 +95,18 @@ const GoalScreen = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>รายการแสดงยอดคงเหลือ</Text>
-        
         <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('เพิ่มเป้าหมายการเงิน')}>
           <Text style={styles.addButtonText}>เพิ่ม</Text>
         </TouchableOpacity>
       </View>
-      <View style={styles.dataContainer}>
-
-      {/* Goals List */}
       <FlatList
         data={goals}
         keyExtractor={(item) => item.id}
         renderItem={renderGoalItem}
         contentContainerStyle={styles.goalList}
       />
-      </View>
     </View>
   );
 };
@@ -132,7 +155,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     marginRight: 20,
-    resizeMode: 'contain', 
+    resizeMode: 'contain',
   },
   goalDetails: {
     flex: 1,
@@ -152,10 +175,6 @@ const styles = StyleSheet.create({
   deleteText: {
     color: 'red',
     fontWeight: 'bold',
-  },
-  dataContainer: { 
-    flex: 1, 
-    backgroundColor: '#F7F7F7', 
   },
 });
 
