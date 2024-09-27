@@ -36,25 +36,25 @@ const AddGoalScreen = ({ navigation }) => {
   const handleSaveGoal = async () => {
     if (goalAmount && selectedCategory) {
       const newGoal = {
-        id: Date.now().toString(), 
-        title: selectedCategory.name, 
+        id: Date.now().toString(),
+        title: selectedCategory.name,
         amount: parseFloat(goalAmount), // เปลี่ยนเป็นตัวเลขแทน string
         remainingAmount: parseFloat(goalAmount), // จำนวนเงินคงเหลือเท่ากับยอดตั้งต้น
-        date: endDate.toLocaleDateString('th-TH'), 
-        icon: selectedCategory.imageUrl, 
+        date: endDate.toLocaleDateString('th-TH'),
+        icon: selectedCategory.imageUrl,
         createdAt: new Date(), // บันทึกวันเวลาที่ตั้งเป้าหมาย
       };
-  
+
       let savedGoals = await AsyncStorage.getItem('goals');
       savedGoals = savedGoals ? JSON.parse(savedGoals) : [];
-  
+
       const updatedGoals = savedGoals.filter(goal => goal.title !== selectedCategory.name);
       updatedGoals.push(newGoal);
-  
+
       await AsyncStorage.setItem('goals', JSON.stringify(updatedGoals));
-  
+
       navigation.navigate('GoalScreen', { refresh: true });
-  
+
       setGoalAmount('');
       setSelectedCategory(null);
       setEndDate(new Date());
@@ -70,13 +70,13 @@ const AddGoalScreen = ({ navigation }) => {
         amount: parseFloat(amount),
         createdAt: new Date(), // บันทึกวันเวลาที่มีการเพิ่มรายจ่าย
       };
-  
+
       let existingData = await AsyncStorage.getItem(type);
       existingData = existingData ? JSON.parse(existingData) : [];
-  
+
       const updatedData = [...existingData, transactionData];
       await AsyncStorage.setItem(type, JSON.stringify(updatedData));
-  
+
       navigation.navigate('ผู้จัดการเงิน', {
         transaction: transactionData,
         type
@@ -88,39 +88,39 @@ const AddGoalScreen = ({ navigation }) => {
   const updateGoalRemainingAmount = async () => {
     let savedGoals = await AsyncStorage.getItem('goals');
     savedGoals = savedGoals ? JSON.parse(savedGoals) : [];
-  
+
     let savedExpenses = await AsyncStorage.getItem('expense');
     savedExpenses = savedExpenses ? JSON.parse(savedExpenses) : [];
-  
+
     const updatedGoals = savedGoals.map(goal => {
       const totalExpensesAfterGoal = savedExpenses
         .filter(expense => expense.title === goal.title && new Date(expense.createdAt) > new Date(goal.createdAt))
         .reduce((total, expense) => total + expense.amount, 0);
-  
+
       return {
         ...goal,
         remainingAmount: goal.amount - totalExpensesAfterGoal,
       };
     });
-  
+
     await AsyncStorage.setItem('goals', JSON.stringify(updatedGoals));
   };
-  
-  
+
+
 
   const handleAddAmount = async () => {
     if (goalAmount && selectedCategory) {
       let savedGoals = await AsyncStorage.getItem('goals');
       savedGoals = savedGoals ? JSON.parse(savedGoals) : [];
-  
+
       // Find the goal for this category
       const existingGoal = savedGoals.find(goal => goal.title === selectedCategory.name);
-  
+
       // If goal exists, add the new amount to both 'amount' and 'remainingAmount'
       if (existingGoal) {
         const updatedAmount = parseFloat(existingGoal.amount) + parseFloat(goalAmount);
         const updatedRemainingAmount = parseFloat(existingGoal.remainingAmount) + parseFloat(goalAmount);
-  
+
         existingGoal.amount = updatedAmount; // Update the total goal amount
         existingGoal.remainingAmount = updatedRemainingAmount; // Update the remaining amount
       } else {
@@ -136,13 +136,13 @@ const AddGoalScreen = ({ navigation }) => {
         };
         savedGoals.push(newGoal);
       }
-  
+
       // Save updated goals
       await AsyncStorage.setItem('goals', JSON.stringify(savedGoals));
-  
+
       // Navigate back to GoalScreen and trigger refresh
       navigation.navigate('GoalScreen', { refresh: true });
-  
+
       // Reset the form
       setGoalAmount('');
       setSelectedCategory(null);
@@ -200,13 +200,16 @@ const AddGoalScreen = ({ navigation }) => {
             <Image source={require('../../assets/money-bag.png')} style={styles.moneyIcon} />
             <View style={styles.amountInputContainer}>
               <Text style={styles.label}>จำนวนเงินที่อยากใช้:</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="0 บาท"
-                keyboardType="numeric"
-                value={goalAmount}
-                onChangeText={setGoalAmount}
-              />
+              <View style={styles.inputRow}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="0"
+                  keyboardType="numeric"
+                  value={goalAmount}
+                  onChangeText={setGoalAmount}
+                />
+                <Text style={styles.unitText}>บาท</Text>
+              </View>
             </View>
             <TouchableOpacity onPress={showDatepicker} style={styles.calendarIconContainer}>
               <Icon name="calendar" size={30} color="#347928" />
@@ -273,10 +276,15 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   selectedCategory: {
-    backgroundColor: '#c8e1ff',
+    backgroundColor: '#B7B7B7',
+    borderColor: 'transparent',
+    borderWidth: 1,
     borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#007bff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 1,
+    elevation: 2,
   },
   categoryText: {
     fontSize: 12,
@@ -292,7 +300,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
-    padding: 15,
+    padding: 10,
     backgroundColor: '#B7B7B7',
     borderRadius: 10,
   },
@@ -308,14 +316,28 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
     marginBottom: 5,
+    color: '#234D25',
     textAlign: 'right',
-    color: '#347928',
+    marginRight: 20,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    color: '#234D25',
   },
   input: {
     fontSize: 20,
     padding: 10,
-    backgroundColor: '#B7B7B7',
     textAlign: 'right',
+    marginRight: 5,
+    color: '#234D25',
+  },
+  unitText: {
+    marginRight: 20,
+    fontSize: 20,
+    color: '#234D25',
+
   },
   buttonContainer: {
     flexDirection: 'row',
