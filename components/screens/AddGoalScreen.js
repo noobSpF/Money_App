@@ -77,7 +77,7 @@ const AddGoalScreen = ({ navigation }) => {
       const updatedData = [...existingData, transactionData];
       await AsyncStorage.setItem(type, JSON.stringify(updatedData));
   
-      navigation.navigate('ผู้จัดการเงิน', {
+      navigation.navigate('หน้าแรก', {
         transaction: transactionData,
         type
       });
