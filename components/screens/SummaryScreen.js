@@ -64,16 +64,18 @@ const SummaryScreen = ({ route }) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity
-          style={[styles.tab, isShowingExpenses && styles.activeTab]}
-          onPress={() => setIsShowingExpenses(true)}>
-          <Text style={styles.tabText}>รายจ่าย</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, !isShowingExpenses && styles.activeTab]}
-          onPress={() => setIsShowingExpenses(false)}>
-          <Text style={styles.tabText}>รายรับ</Text>
-        </TouchableOpacity>
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[styles.tab, isShowingExpenses && styles.activeTabExpense]}
+            onPress={() => setIsShowingExpenses(true)}>
+            <Text style={[styles.tabText, isShowingExpenses && styles.activeText]}>รายจ่าย</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, !isShowingExpenses && styles.activeTabIncome]}
+            onPress={() => setIsShowingExpenses(false)}>
+            <Text style={[styles.tabText, !isShowingExpenses && styles.activeText]}>รายรับ</Text>
+          </TouchableOpacity>
+        </View>
       </View>
       {isShowingExpenses ? (
         <ExpenseSummaryScreen expense={expense} />
@@ -95,14 +97,35 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 20,
   },
+  tabContainer: {
+    flexDirection: 'row',
+    borderWidth: 2,
+    borderColor: 'black',
+    borderRadius: 10,
+    overflow: 'hidden',
+    width: 250,
+  },
   tab: {
-    padding: 10,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-    paddingTop:60,
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 30,
   },
   activeTab: {
     borderBottomColor: 'black',
+  },
+  activeTabExpense: {
+    backgroundColor: 'black',
+    borderBottomLeftRadius: 7,
+    borderTopLeftRadius: 7,
+  },
+  activeTabIncome: {
+    backgroundColor: 'black',
+    borderBottomRightRadius: 7,
+    borderTopRightRadius: 7,
+  },
+  activeText: {
+    color: 'white',
   },
   tabText: {
     fontSize: 16,
