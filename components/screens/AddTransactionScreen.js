@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Keyboard, TouchableWithoutFeedback, 
   TouchableOpacity, ScrollView, Alert, Image, KeyboardAvoidingView, Platform } from 'react-native';
-<<<<<<< HEAD
 import { app, db } from '../../firebase'; // เส้นทางที่ถูกต้องไปยังไฟล์ firebase.js
 import { collection, getDocs, addDoc } from 'firebase/firestore';
 import { useFocusEffect } from '@react-navigation/native';
@@ -11,18 +10,7 @@ const saveTransaction = async (transaction, type, navigation) => {
   try {
     const { title, amount, note, time } = transaction;
     // แปลง amount เป็นตัวเลขและเพิ่ม note, time
-=======
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { app, db } from '../../firebase';
-import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
-import { useFocusEffect } from '@react-navigation/native';
 
-const saveTransaction = async (transaction, type, navigation) => {
-  try {
-    const { title, amount } = transaction;
-
-    // แปลงจำนวนเงินให้เป็นตัวเลข
->>>>>>> origin/final_develop
     const transactionData = { 
       title, 
       amount: parseFloat(amount),
@@ -33,37 +21,10 @@ const saveTransaction = async (transaction, type, navigation) => {
     // บันทึกลง Firestore
     const docRef = await addDoc(collection(db, type === 'expense' ? 'Expenses' : 'Incomes'), transactionData);
     console.log('Transaction saved with ID:', docRef.id); // แสดง ID ของรายการที่บันทึก
-
-<<<<<<< HEAD
     navigation.navigate('หน้าแรก', {
       transaction: { id: docRef.id, ...transactionData }, // ส่ง ID กลับไปด้วย
       type
-    });
-=======
-    // ดึงข้อมูลเดิมจาก AsyncStorage
-    let existingData = await AsyncStorage.getItem(type);
-    existingData = existingData ? JSON.parse(existingData) : [];
-
-    // ตรวจสอบว่ามีรายการซ้ำกันหรือไม่
-    const isDuplicate = existingData.some(item => item.title === transaction.title && item.amount === transaction.amount);
-    if (!isDuplicate) {
-      const updatedData = [...existingData, transactionData];
-      await AsyncStorage.setItem(type, JSON.stringify(updatedData));
-
-      // อัปเดตยอดเงินคงเหลือของเป้าหมาย หากเป็นรายการรายจ่าย
-      if (type === 'expense') {
-        await updateGoalRemainingAmount(transactionData);
-      }
-
-      // นำผู้ใช้กลับไปยังหน้าหลักหรือหน้าที่กำหนด
-      navigation.navigate('ผู้จัดการเงิน', {
-        transaction: transactionData,
-        type
-      });
-    } else {
-      Alert.alert('ข้อมูลซ้ำ', 'รายการนี้มีอยู่แล้ว');
-    }
->>>>>>> origin/final_develop
+    });ห
   } catch (error) {
     console.error('Error saving transaction:', error);
   }
@@ -331,14 +292,9 @@ const styles = StyleSheet.create({
   },
   categoryImage: {
     width: 40,
-<<<<<<< HEAD
-    height: 40,
-    marginBottom: 5,
-=======
     height: 30,
     borderRadius: 8,
     marginTop: 5, 
->>>>>>> origin/final_develop
   },
 });
 
