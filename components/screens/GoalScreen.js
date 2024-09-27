@@ -70,7 +70,7 @@ const GoalScreen = ({ navigation, route }) => {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>รายการแสดงยอดคงเหลือ</Text>
         
-        <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('AddGoalScreen')}>
+        <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('เพิ่มเป้าหมายการเงิน')}>
           <Text style={styles.addButtonText}>เพิ่ม</Text>
         </TouchableOpacity>
       </View>

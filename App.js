@@ -21,7 +21,7 @@ const Stack = createStackNavigator();
 const GoalStackNavigator = () => (
   <Stack.Navigator>
     <Stack.Screen name="GoalScreen" component={GoalScreen} options={{ headerShown: false }} />
-    <Stack.Screen name="AddGoalScreen" component={AddGoalScreen} />
+    <Stack.Screen name="เพิ่มเป้าหมายการเงิน" component={AddGoalScreen} />
   </Stack.Navigator>
 );
 
@@ -69,7 +69,7 @@ const TabNavigator = () => {
       <Tab.Screen 
         name="หน้าแรก" 
         component={HomeScreen} 
-        options={{ headerShown: true,headerTitleAlign: 'center',headerTitle: 'ผู้จัดการเงิน', tabBarIcon: ({ color }) => (<Icon name="home" size={24} color={color} />) 
+        options={{ headerShown: true, headerTitleAlign: 'center',headerTitle: 'ผู้จัดการเงิน', tabBarIcon: ({ color }) => (<Icon name="home" size={24} color={color} />) 
         }} 
       />
       <Tab.Screen 
