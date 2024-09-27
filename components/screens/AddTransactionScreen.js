@@ -9,53 +9,26 @@ import { useFocusEffect } from '@react-navigation/native';
 const saveTransaction = async (transaction, type, navigation) => {
   try {
     const { title, amount, note, time } = transaction;
-    // แปลง amount เป็นตัวเลขและเพิ่ม note, time
 
+    // แปลง amount เป็นตัวเลขและเพิ่ม note, time
     const transactionData = { 
       title, 
-      amount: parseFloat(amount),
-      createdAt: new Date(),
+      amount: parseFloat(amount), 
+      note: note || 'N/A',
+      time: time || new Date().toLocaleString()
     };
     console.log('Saving transaction data:', transactionData);
     
     // บันทึกลง Firestore
     const docRef = await addDoc(collection(db, type === 'expense' ? 'Expenses' : 'Incomes'), transactionData);
     console.log('Transaction saved with ID:', docRef.id); // แสดง ID ของรายการที่บันทึก
+
     navigation.navigate('หน้าแรก', {
       transaction: { id: docRef.id, ...transactionData }, // ส่ง ID กลับไปด้วย
       type
-    });ห
+    });
   } catch (error) {
     console.error('Error saving transaction:', error);
-  }
-};
-
-// ฟังก์ชันอัปเดตยอดเงินคงเหลือใน Firestore
-const updateGoalRemainingAmount = async (transaction) => {
-  const { title, amount } = transaction;
-
-  try {
-    // ดึงข้อมูลทั้งหมดจาก Firestore คอลเลกชัน 'Goals'
-    const goalsSnapshot = await getDocs(collection(db, 'Goals'));
-    const goals = goalsSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
-    // ตรวจสอบว่าเป้าหมายในหมวดหมู่นี้มีอยู่หรือไม่
-    const existingGoal = goals.find(goal => goal.title === title);
-
-    if (existingGoal) {
-      // อัปเดตยอดเงินคงเหลือ
-      const updatedRemainingAmount = parseFloat(existingGoal.remainingAmount) - parseFloat(amount);
-
-      // อัปเดตเป้าหมายใน Firestore
-      await updateDoc(doc(db, 'Goals', existingGoal.id), {
-        remainingAmount: updatedRemainingAmount >= 0 ? updatedRemainingAmount : 0, // ป้องกันไม่ให้ยอดคงเหลือติดลบ
-      });
-    }
-  } catch (error) {
-    console.error('Error updating goal remaining amount:', error);
   }
 };
 
@@ -70,19 +43,18 @@ const AddTransactionScreen = ({ navigation }) => {
   const [note, setNote] = useState('');
   const [date, setDate] = useState('');
 
-
   useFocusEffect(
     React.useCallback(() => {
+      // เมื่อเข้ามาที่หน้า "เพิ่ม" ให้คีย์บอร์ดโผล่ขึ้นมาโดยโฟกัสที่ TextInput
       if (inputRef.current) {
         inputRef.current.focus();
       }
     }, [])
   );
 
-  useEffect(() => {
+  useEffect(() => { // useEffect นี้เอาไว้รีเซ็ตสถานะเมื่อเข้าหน้า
     const unsubscribe = navigation.addListener('focus', () => {
       resetForm(); // เรียกใช้ฟังก์ชันรีเซ็ต
-
     });
 
     return unsubscribe;
@@ -140,31 +112,31 @@ const AddTransactionScreen = ({ navigation }) => {
   };
 
   const handleCategorySelect = (category) => {
-    setSelectedCategory(category);
+    setSelectedCategory(category); 
     setTitle(category.name); 
   };
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }}
-    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    keyboardVerticalOffset={Platform.OS === 'ios' ? 30 : 100}>
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <View style={styles.tabContainer}>  
-            <TouchableOpacity
-              style={[styles.tab, isShowingExpenses && styles.activeTabExpense]}
-              onPress={() => setIsShowingExpenses(true)}>
-              <Text style={[styles.tabText, isShowingExpenses && styles.activeText]}>รายจ่าย</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.tab, !isShowingExpenses && styles.activeTabIncome]}
-              onPress={() => setIsShowingExpenses(false)}>
-              <Text style={[styles.tabText, !isShowingExpenses && styles.activeText]}>รายรับ</Text>
-            </TouchableOpacity>
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 30 : 100}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <View style={styles.tabContainer}>  
+              <TouchableOpacity
+                style={[styles.tab, isShowingExpenses && styles.activeTabExpense]}
+                onPress={() => setIsShowingExpenses(true)}>
+                <Text style={[styles.tabText, isShowingExpenses && styles.activeText]}>รายจ่าย</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.tab, !isShowingExpenses && styles.activeTabIncome]}
+                onPress={() => setIsShowingExpenses(false)}>
+                <Text style={[styles.tabText, !isShowingExpenses && styles.activeText]}>รายรับ</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>     
-          
+
           <ScrollView contentContainerStyle={styles.categoryContainer}>
             {categories.map((category) => (
               <TouchableOpacity
@@ -200,7 +172,6 @@ const AddTransactionScreen = ({ navigation }) => {
           </View> 
         </View>
       </TouchableWithoutFeedback>
-
     </KeyboardAvoidingView>
   );
 };
@@ -292,9 +263,8 @@ const styles = StyleSheet.create({
   },
   categoryImage: {
     width: 40,
-    height: 30,
-    borderRadius: 8,
-    marginTop: 5, 
+    height: 40,
+    marginBottom: 5,
   },
 });
 
