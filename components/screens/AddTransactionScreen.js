@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Keyboard, TouchableWithoutFeedback, 
   TouchableOpacity, ScrollView, Alert, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { app, db } from '../../firebase'; // เส้นทางที่ถูกต้องไปยังไฟล์ firebase.js
-import { collection, getDocs, addDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc,doc } from 'firebase/firestore';
 import { useFocusEffect } from '@react-navigation/native';
 
 // ฟังก์ชันสำหรับบันทึกรายการ
@@ -95,6 +95,7 @@ const AddTransactionScreen = ({ navigation }) => {
         Alert.alert('จำนวนเงินไม่ถูกต้อง', 'กรุณากรอกจำนวนเงินที่ถูกต้อง');
         return;
       }
+      
       const transaction = { 
         title, 
         amount: parseFloat(amount), 
@@ -103,13 +104,40 @@ const AddTransactionScreen = ({ navigation }) => {
         date: date || new Date().toISOString() 
       }; 
       const type = isShowingExpenses ? 'expense' : 'income';
-
+    
+      // Check if there is a corresponding goal for the selected category
+      if (type === 'expense') {
+        const goalsSnapshot = await getDocs(collection(db, 'Goals'));
+        const goals = goalsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+    
+        const relatedGoal = goals.find(goal => goal.title === selectedCategory.name);
+        if (relatedGoal) {
+          // Calculate the new remaining amount
+          const updatedRemainingAmount = parseFloat(relatedGoal.remainingAmount) - parseFloat(amount);
+  
+          // Always allow the transaction to be saved, but set remainingAmount to 0 if it goes negative
+          const finalRemainingAmount = updatedRemainingAmount < 0 ? 0 : updatedRemainingAmount;
+    
+          // Update the remaining amount of the related goal
+          await updateDoc(doc(db, 'Goals', relatedGoal.id), {
+            remainingAmount: finalRemainingAmount
+          });
+        }
+      }
+    
+      // Save the transaction as before
       await saveTransaction(transaction, type, navigation);
-      resetForm(); // รีเซ็ตฟอร์มหลังจากบันทึก
+      resetForm(); // Reset the form after saving
     } else {
       Alert.alert('ข้อมูลไม่ครบ', 'กรุณากรอกข้อมูลให้ครบถ้วน');
     }
   };
+  
+  
+  
 
   const handleCategorySelect = (category) => {
     setSelectedCategory(category); 

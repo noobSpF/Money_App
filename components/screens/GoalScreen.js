@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert, ActivityIndicator } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../firebase';
 
-const GoalScreen = ({ navigation, route }) => {
+const GoalScreen = ({ navigation }) => {
   const [goals, setGoals] = useState([]);
+  const [loading, setLoading] = useState(true); // Add loading state
   const isFocused = useIsFocused();
 
-  // ดึงข้อมูลเป้าหมายจาก Firestore
   useEffect(() => {
     const fetchGoals = async () => {
+      setLoading(true); // Start loading when fetching data
       try {
         const querySnapshot = await getDocs(collection(db, 'Goals'));
         const goalsData = querySnapshot.docs.map(doc => {
@@ -18,19 +19,21 @@ const GoalScreen = ({ navigation, route }) => {
           return {
             id: doc.id,
             ...data,
-            date: data.date.toDate ? data.date.toDate().toLocaleDateString('th-TH') : data.date, // ตรวจสอบว่าเป็น Timestamp หรือ string แล้วแปลงเป็น Date
+            date: data.date.toDate ? data.date.toDate().toLocaleDateString('th-TH') : data.date,
           };
         });
         setGoals(goalsData);
       } catch (error) {
-        console.error('เกิดข้อผิดพลาดในการดึงข้อมูล:', error);
+        console.error('Error fetching goals:', error);
+      } finally {
+        setLoading(false); // Stop loading after fetching data
       }
     };
 
-    if (isFocused || route.params?.refresh) {
+    if (isFocused) {
       fetchGoals();
     }
-  }, [isFocused, route.params?.refresh]);
+  }, [isFocused]);
 
   const handleDeleteGoal = async (goal) => {
     Alert.alert(
@@ -46,7 +49,7 @@ const GoalScreen = ({ navigation, route }) => {
           onPress: async () => {
             const updatedGoals = goals.filter(g => g.id !== goal.id);
             setGoals(updatedGoals);
-            await deleteDoc(doc(db, 'Goals', goal.id)); // ลบข้อมูลจาก Firebase
+            await deleteDoc(doc(db, 'Goals', goal.id));
           },
         },
       ],
@@ -54,31 +57,10 @@ const GoalScreen = ({ navigation, route }) => {
     );
   };
 
-  const getCategoryIcon = (categoryName) => {
-    switch (categoryName) {
-      case 'อาหาร':
-        return require('../../assets/Food-icon.png');
-      case 'การเดินทาง':
-        return require('../../assets/Transport-icon.png');
-      case 'แฟชั่น':
-        return require('../../assets/Fashion-icon.png');
-      case 'ที่อยู่อาศัย':
-        return require('../../assets/House-icon.png');
-      case 'สังคม':
-        return require('../../assets/Social-icon.png');
-      case 'สิ่งของ':
-        return require('../../assets/Items-icon.png');
-      case 'การศึกษา':
-        return require('../../assets/Edu-icon.png');
-      case 'สุขภาพ':
-        return require('../../assets/Health-icon.png');
-    }
-  };
-
   const renderGoalItem = ({ item }) => (
     <View style={styles.goalItem}>
       <Image 
-        source={getCategoryIcon(item.title)} 
+        source={{ uri: item.icon }} 
         style={styles.goalIcon} 
       />
       <View style={styles.goalDetails}>
@@ -97,10 +79,19 @@ const GoalScreen = ({ navigation, route }) => {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>รายการแสดงยอดคงเหลือ</Text>
-        <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('เพิ่มเป้าหมายการเงิน')}>
+        <TouchableOpacity 
+          style={styles.addButton} 
+          onPress={() => navigation.navigate('AddGoalScreen')} // Navigate to AddGoalScreen
+        >
           <Text style={styles.addButtonText}>เพิ่ม</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Show loading spinner below the header */}
+      {loading && (
+        <ActivityIndicator size="large" color="#0000ff" style={styles.loadingSpinner} />
+      )}
+
       <FlatList
         data={goals}
         keyExtractor={(item) => item.id}
@@ -175,6 +166,9 @@ const styles = StyleSheet.create({
   deleteText: {
     color: 'red',
     fontWeight: 'bold',
+  },
+  loadingSpinner: {
+    marginVertical: 20, // Add spacing between header and spinner
   },
 });
 

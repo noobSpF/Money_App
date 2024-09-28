@@ -32,118 +32,81 @@ const AddGoalScreen = ({ navigation }) => {
 
   const handleSaveGoal = async () => {
     if (goalAmount && selectedCategory) {
-      const newGoal = {
-        id: Date.now().toString(),
-        title: selectedCategory.name,
-        amount: parseFloat(goalAmount), // เปลี่ยนเป็นตัวเลขแทน string
-        remainingAmount: parseFloat(goalAmount), // จำนวนเงินคงเหลือเท่ากับยอดตั้งต้น
-        date: endDate.toLocaleDateString('th-TH'),
-        icon: selectedCategory.imageUrl,
-        createdAt: new Date(), // บันทึกวันเวลาที่ตั้งเป้าหมาย
-      };
+      try {
+        const goalsSnapshot = await getDocs(collection(db, 'Goals'));
+        const goals = goalsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
-      let savedGoals = await AsyncStorage.getItem('goals');
-      savedGoals = savedGoals ? JSON.parse(savedGoals) : [];
+        const existingGoal = goals.find(goal => goal.title === selectedCategory.name);
 
-      const updatedGoals = savedGoals.filter(goal => goal.title !== selectedCategory.name);
-      updatedGoals.push(newGoal);
+        if (existingGoal) {
+          // อัพเดตข้อมูลเป้าหมายที่มีอยู่
+          await updateDoc(doc(db, 'Goals', existingGoal.id), {
+            amount: parseFloat(goalAmount),
+            remainingAmount: parseFloat(goalAmount),
+            date: endDate.toLocaleDateString('th-TH'), 
+          });
+        } else {
+          // สร้างเป้าหมายใหม่
+          const newGoal = {
+            title: selectedCategory.name,
+            amount: parseFloat(goalAmount),
+            remainingAmount: parseFloat(goalAmount),
+            date: endDate.toLocaleDateString('th-TH'), 
+            icon: selectedCategory.imageUrl,
+            createdAt: new Date(), 
+          };
 
-      await AsyncStorage.setItem('goals', JSON.stringify(updatedGoals));
+          await addDoc(collection(db, 'Goals'), newGoal);
+        }
 
-      navigation.navigate('GoalScreen', { refresh: true });
-
-      setGoalAmount('');
-      setSelectedCategory(null);
-      setEndDate(new Date());
-
+        navigation.navigate('GoalScreen', { refresh: true });
+        setGoalAmount('');
+        setSelectedCategory(null);
+        setEndDate(new Date()); 
+      } catch (error) {
+        console.error('Error saving goal to Firestore:', error);
+        Alert.alert('Error', 'An error occurred while saving the goal.');
+      }
     } else {
       Alert.alert('ข้อมูลไม่ครบ', 'กรุณาเลือกหมวดหมู่และกรอกจำนวนเงิน');
     }
   };
-  const saveTransaction = async (transaction, type, navigation) => {
-    try {
-      const { title, amount } = transaction;
-      const transactionData = {
-        title,
-        amount: parseFloat(amount),
-        createdAt: new Date(), // บันทึกวันเวลาที่มีการเพิ่มรายจ่าย
-      };
-
-      let existingData = await AsyncStorage.getItem(type);
-      existingData = existingData ? JSON.parse(existingData) : [];
-
-      const updatedData = [...existingData, transactionData];
-      await AsyncStorage.setItem(type, JSON.stringify(updatedData));
-      navigation.navigate('ผู้จัดการเงิน', {
-
-        transaction: transactionData,
-        type
-      });
-    } catch (error) {
-      console.error('Error saving transaction:', error);
-    }
-  };
-  const updateGoalRemainingAmount = async () => {
-    let savedGoals = await AsyncStorage.getItem('goals');
-    savedGoals = savedGoals ? JSON.parse(savedGoals) : [];
-
-    let savedExpenses = await AsyncStorage.getItem('expense');
-    savedExpenses = savedExpenses ? JSON.parse(savedExpenses) : [];
-
-    const updatedGoals = savedGoals.map(goal => {
-      const totalExpensesAfterGoal = savedExpenses
-        .filter(expense => expense.title === goal.title && new Date(expense.createdAt) > new Date(goal.createdAt))
-        .reduce((total, expense) => total + expense.amount, 0);
-
-      return {
-        ...goal,
-        remainingAmount: goal.amount - totalExpensesAfterGoal,
-      };
-    });
-
-    await AsyncStorage.setItem('goals', JSON.stringify(updatedGoals));
-  };
-
-
 
   const handleAddAmount = async () => {
     if (goalAmount && selectedCategory) {
-      let savedGoals = await AsyncStorage.getItem('goals');
-      savedGoals = savedGoals ? JSON.parse(savedGoals) : [];
+      try {
+        const goalsSnapshot = await getDocs(collection(db, 'Goals'));
+        const goals = goalsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
-      // Find the goal for this category
-      const existingGoal = savedGoals.find(goal => goal.title === selectedCategory.name);
+        const existingGoal = goals.find(goal => goal.title === selectedCategory.name);
 
-      // If goal exists, add the new amount to both 'amount' and 'remainingAmount'
-      if (existingGoal) {
-        const updatedAmount = parseFloat(existingGoal.amount) + parseFloat(goalAmount);
-        const updatedRemainingAmount = parseFloat(existingGoal.remainingAmount) + parseFloat(goalAmount);
+        if (existingGoal) {
+          // เพิ่มจำนวนเงินในเป้าหมายที่มีอยู่
+          const updatedAmount = parseFloat(existingGoal.amount) + parseFloat(goalAmount);
+          const updatedRemainingAmount = parseFloat(existingGoal.remainingAmount) + parseFloat(goalAmount);
 
-        existingGoal.amount = updatedAmount; // Update the total goal amount
-        existingGoal.remainingAmount = updatedRemainingAmount; // Update the remaining amount
-      } else {
-        // If no existing goal, create a new one with both 'amount' and 'remainingAmount' initialized
-        const newGoal = {
-          id: Date.now().toString(),
-          title: selectedCategory.name,
-          amount: parseFloat(goalAmount),
-          remainingAmount: parseFloat(goalAmount), // Set remaining amount initially the same as amount
-          date: new Date().toLocaleDateString('th-TH'),
-          icon: selectedCategory.imageUrl,
-          createdAt: new Date(), // Save the date the goal was created
-        };
-        savedGoals.push(newGoal);
+          await updateDoc(doc(db, 'Goals', existingGoal.id), {
+            amount: updatedAmount,
+            remainingAmount: updatedRemainingAmount,
+          });
+
+          navigation.navigate('GoalScreen', { refresh: true });
+        } else {
+          await handleSaveGoal(); 
+        }
+
+        setGoalAmount('');
+        setSelectedCategory(null);
+      } catch (error) {
+        console.error('Error updating goal:', error);
+        Alert.alert('Error', 'An error occurred while updating the goal.');
       }
-
-      // Save updated goals
-      await AsyncStorage.setItem('goals', JSON.stringify(savedGoals));
-
-      // Navigate back to GoalScreen and trigger refresh
-      navigation.navigate('GoalScreen', { refresh: true });
-
-      // Reset the form
-      setGoalAmount('');
-      setSelectedCategory(null);
     } else {
       Alert.alert('ข้อมูลไม่ครบ', 'กรุณาเลือกหมวดหมู่และกรอกจำนวนเงิน');
     }
@@ -193,16 +156,13 @@ const AddGoalScreen = ({ navigation }) => {
             <Image source={require('../../assets/money-bag.png')} style={styles.moneyIcon} />
             <View style={styles.amountInputContainer}>
               <Text style={styles.label}>จำนวนเงินที่อยากใช้:</Text>
-              <View style={styles.inputRow}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="0"
-                  keyboardType="numeric"
-                  value={goalAmount}
-                  onChangeText={setGoalAmount}
-                />
-                <Text style={styles.unitText}>บาท</Text>
-              </View>
+              <TextInput
+                style={styles.input}
+                placeholder="0 บาท"
+                keyboardType="numeric"
+                value={goalAmount}
+                onChangeText={setGoalAmount}
+              />
             </View>
             <TouchableOpacity onPress={showDatepicker} style={styles.calendarIconContainer}>
               <Icon name="calendar" size={30} color="#347928" />
@@ -261,15 +221,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   selectedCategory: {
-    backgroundColor: '#B7B7B7',
-    borderColor: 'transparent',
-    borderWidth: 1,
+    backgroundColor: '#c8e1ff',
     borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 1,
-    elevation: 2,
+    borderWidth: 2,
+    borderColor: '#007bff',
   },
   categoryText: {
     fontSize: 12,
@@ -285,7 +240,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
-    padding: 10,
+    padding: 15,
     backgroundColor: '#B7B7B7',
     borderRadius: 10,
   },
@@ -301,28 +256,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
     marginBottom: 5,
-    color: '#234D25',
     textAlign: 'right',
-    marginRight: 20,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    color: '#234D25',
+    color: '#347928',
   },
   input: {
     fontSize: 20,
     padding: 10,
+    backgroundColor: '#B7B7B7',
     textAlign: 'right',
-    marginRight: 5,
-    color: '#234D25',
-  },
-  unitText: {
-    marginRight: 20,
-    fontSize: 20,
-    color: '#234D25',
-
   },
   buttonContainer: {
     flexDirection: 'row',
