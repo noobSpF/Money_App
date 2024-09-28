@@ -3,6 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert, Activ
 import { useIsFocused } from '@react-navigation/native';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../firebase';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const GoalScreen = ({ navigation }) => {
   const [goals, setGoals] = useState([]);
@@ -70,8 +71,9 @@ const GoalScreen = ({ navigation }) => {
         <Text style={styles.goalDate}>วันที่สิ้นสุด: {item.date}</Text>
       </View>
       <TouchableOpacity onPress={() => handleDeleteGoal(item)}>
-        <Text style={styles.deleteText}>ลบ</Text>
-      </TouchableOpacity>
+  <Ionicons name="trash-outline" size={24} color="red" />
+</TouchableOpacity>
+
     </View>
   );
 
@@ -136,11 +138,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#F9F9F9',
+    backgroundColor: '#FFFFFF',
     marginBottom: 10,
     borderRadius: 10,
     borderColor: '#E0E0E0',
     borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   goalIcon: {
     width: 50,

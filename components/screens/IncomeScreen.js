@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '../../firebase'; // เส้นทางที่ถูกต้องไปยังไฟล์ firebase.js
 import { collection, getDocs, query, where, onSnapshot } from 'firebase/firestore';
 import { doc, deleteDoc } from 'firebase/firestore';
-
+import Ionicons from 'react-native-vector-icons/Ionicons';
 // ฟังก์ชันสำหรับลบรายการ
 const removeTransaction = async (item, type) => {
   try {
@@ -86,16 +86,13 @@ const IncomeScreen = () => {
           text: 'ลบ',
           onPress: async () => {
             try {
-              // ลบรายการจาก Firebase
-              await deleteDoc(doc(db, 'Income', item.id));
-
-              // ลบรายการจาก AsyncStorage
-              await removeTransaction(item, 'income');
-
-              // อัปเดตสถานะใน React
+              // Delete the document from the 'Incomes' collection using its ID
+              await deleteDoc(doc(db, 'Incomes', item.id));
+  
+              // Remove the deleted income from the local state
               setIncome(prev => prev.filter(transaction => transaction.id !== item.id));
             } catch (error) {
-              console.error('Error deleting document:', error);
+              console.error('Error deleting income:', error);
             }
           },
           style: 'destructive',
@@ -136,8 +133,8 @@ const IncomeScreen = () => {
                 </View>
               </View>
               <TouchableOpacity onPress={() => handleDelete(item)} style={styles.object3}>
-                <Text style={styles.delete}>ลบ</Text>
-              </TouchableOpacity>
+  <Ionicons name="trash-outline" size={24} color="red" />
+</TouchableOpacity>
             </View>
           )}
         />

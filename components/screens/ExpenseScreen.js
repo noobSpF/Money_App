@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '../../firebase'; // เส้นทางที่ถูกต้องไปยังไฟล์ firebase.js
 import { collection, query, where, onSnapshot,getDocs } from 'firebase/firestore';
 import { doc, deleteDoc } from 'firebase/firestore';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const ExpenseScreen = () => {
   const [expenses, setExpenses] = useState([]);
@@ -121,8 +122,8 @@ const ExpenseScreen = () => {
                 </View>
               </View>
               <TouchableOpacity onPress={() => handleDelete(item)} style={styles.object3}>
-                <Text style={styles.delete}>ลบ</Text>
-              </TouchableOpacity>
+  <Ionicons name="trash-outline" size={24} color="red" />
+</TouchableOpacity>
             </View>
           )}
         />

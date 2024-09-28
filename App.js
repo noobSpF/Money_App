@@ -20,7 +20,7 @@ const Stack = createStackNavigator();
 const GoalStackNavigator = () => (
   <Stack.Navigator>
     <Stack.Screen name="GoalScreen" component={GoalScreen} options={{ headerShown: false }} />
-    <Stack.Screen name="AddGoalScreen" component={AddGoalScreen} options={{ title: 'เพิ่มเป้าหมายการเงิน' }} />
+    <Stack.Screen name="AddGoalScreen" component={AddGoalScreen} options={{ title: 'เพิ่มเป้าหมายการเงิน' ,headerTitleAlign: 'center',  }} />
   </Stack.Navigator>
 );
 
