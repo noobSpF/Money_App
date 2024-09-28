@@ -128,71 +128,75 @@ const AddGoalScreen = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 30 : 100}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.container}>
-          <Text style={styles.subTitle}>หมวดหมู่</Text>
-          <ScrollView contentContainerStyle={styles.categoryContainer}>
-            {expenseCategories.map((category) => (
-              <TouchableOpacity
-                key={category.id}
-                style={[
-                  styles.categoryButton,
-                  selectedCategory?.id === category.id && styles.selectedCategory
-                ]}
-                onPress={() => handleCategorySelect(category)}>
-                {category.imageUrl && (
-                  <Image source={{ uri: category.imageUrl }} style={styles.categoryImage} />
-                )}
-                <Text style={styles.categoryText}>{category.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          <View style={styles.amountContainer}>
-            <Image source={require('../../assets/money-bag.png')} style={styles.moneyIcon} />
-            <View style={styles.amountInputContainer}>
-              <Text style={styles.label}>จำนวนเงินที่อยากใช้:</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="0 บาท"
-                keyboardType="numeric"
-                value={goalAmount}
-                onChangeText={setGoalAmount}
-              />
-            </View>
-            <TouchableOpacity onPress={showDatepicker} style={styles.calendarIconContainer}>
-              <Icon name="calendar" size={30} color="#347928" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.datePickerContainer}>
-            <Text>วันที่สิ้นสุด: {endDate.toLocaleDateString('th-TH')}</Text>
-            {showDatePicker && (
-              <DateTimePicker
-                value={endDate}
-                mode="date"
-                display="default"
-                onChange={onDateChange}
-                minimumDate={tomorrowDate} 
-              />
+<KeyboardAvoidingView
+  style={{ flex: 1 }}
+  behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+  keyboardVerticalOffset={Platform.OS === 'ios' ? 30 : 75}>
+  
+  <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+    <View style={styles.container}>
+      <Text style={styles.subTitle}>หมวดหมู่</Text>
+      <ScrollView contentContainerStyle={styles.categoryContainer}>
+        {expenseCategories.map((category) => (
+          <TouchableOpacity
+            key={category.id}
+            style={[
+              styles.categoryButton,
+              selectedCategory?.id === category.id && styles.selectedCategory
+            ]}
+            onPress={() => handleCategorySelect(category)}>
+            {category.imageUrl && (
+              <Image source={{ uri: category.imageUrl }} style={styles.categoryImage} />
             )}
-          </View>
+            <Text style={styles.categoryText}>{category.name}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
 
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.addButton} onPress={handleAddAmount}>
-              <Text style={styles.buttonText}>เพิ่ม</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.saveButton} onPress={handleSaveGoal}>
-              <Text style={styles.buttonText}>บันทึก</Text>
-            </TouchableOpacity>
+      <View style={styles.amountContainer}>
+        <Image source={require('../../assets/money-bag.png')} style={styles.moneyIcon} />
+        <View style={styles.amountInputContainer}>
+          <Text style={styles.label}>จำนวนเงินที่อยากใช้:</Text>
+          <View style={styles.inputRow}>
+            <TextInput
+              style={styles.input}
+              placeholder="0"
+              keyboardType="numeric"
+              value={goalAmount}
+              onChangeText={setGoalAmount}
+            />
+            <Text style={styles.unitText}>บาท</Text>
           </View>
         </View>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+        <TouchableOpacity onPress={showDatepicker} style={styles.calendarIconContainer}>
+          <Icon name="calendar" size={30} color="#347928" />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.datePickerContainer}>
+        <Text>วันที่สิ้นสุด: {endDate.toLocaleDateString('th-TH')}</Text>
+        {showDatePicker && (
+          <DateTimePicker
+            value={endDate}
+            mode="date"
+            display="default"
+            onChange={onDateChange}
+            minimumDate={tomorrowDate} 
+          />
+        )}
+      </View>
+
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.addButton} onPress={handleAddAmount}>
+          <Text style={styles.buttonText}>เพิ่ม</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.saveButton} onPress={handleSaveGoal}>
+          <Text style={styles.buttonText}>บันทึก</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </TouchableWithoutFeedback>
+</KeyboardAvoidingView>
   );
 };
 
@@ -221,10 +225,15 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   selectedCategory: {
-    backgroundColor: '#c8e1ff',
+    backgroundColor: '#B7B7B7',
+    borderColor: 'transparent',
+    borderWidth: 1,
     borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#007bff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 1,
+    elevation: 2,
   },
   categoryText: {
     fontSize: 12,
@@ -240,7 +249,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
-    padding: 15,
+    padding: 10,
     backgroundColor: '#B7B7B7',
     borderRadius: 10,
   },
@@ -256,14 +265,28 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
     marginBottom: 5,
+    color: '#234D25',
     textAlign: 'right',
-    color: '#347928',
+    marginRight: 20,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    color: '#234D25',
   },
   input: {
     fontSize: 20,
     padding: 10,
-    backgroundColor: '#B7B7B7',
     textAlign: 'right',
+    marginRight: 5,
+    color: '#234D25',
+  },
+  unitText: {
+    marginRight: 20,
+    fontSize: 20,
+    color: '#234D25',
+
   },
   buttonContainer: {
     flexDirection: 'row',

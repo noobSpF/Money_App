@@ -124,12 +124,17 @@ const styles = StyleSheet.create({
   },
   addButton: {
     backgroundColor: '#B7B7B7',
-    padding: 10,
-    borderRadius: 5,
+    paddingStart:10 ,
+    paddingEnd:10,
+    paddingTop:3,
+    paddingBottom:3,
+    borderRadius: 10,
+    margin: 8,
   },
   addButtonText: {
     color: '#347928',
     fontWeight: 'bold',
+    fontSize: 15,
   },
   goalList: {
     paddingHorizontal: 20,
