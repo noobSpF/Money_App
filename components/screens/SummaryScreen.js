@@ -87,10 +87,10 @@ const SummaryScreen = ({ route }) => {
     <View style={styles.container}>
       <View style={styles.header}>
       </View>
-      {type === 'expense' ? (
-        <ExpenseSummaryScreen expense={expense} /> 
+      {type === 'income' ? (
+        <IncomeSummaryScreen income={income} /> 
       ) : (
-        <IncomeSummaryScreen income={income} />
+        <ExpenseSummaryScreen expense={expense} />
       )}
     </View>
   );
