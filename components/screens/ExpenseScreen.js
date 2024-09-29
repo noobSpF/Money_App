@@ -2,65 +2,76 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet, Alert, ActivityIndicator, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '../../firebase'; // เส้นทางที่ถูกต้องไปยังไฟล์ firebase.js
-import { collection, query, where, onSnapshot,getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { doc, deleteDoc } from 'firebase/firestore';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const ExpenseScreen = () => {
   const [expenses, setExpenses] = useState([]);
   const [expensesicon, setExpensesicon] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // ย้ายการประกาศ useState มาที่นี่
 
-  useEffect(() => { 
-    const today = new Date(); // วันที่ปัจจุบัน
-    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1); // วันแรกของเดือน
-    const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0); // วันสุดท้ายของเดือน
-
-    // แปลง firstDayOfMonth และ lastDayOfMonth ให้เป็นสตริงในรูปแบบเดียวกันกับที่เก็บใน Firestore
-    const firstDayOfMonthStr = `${(firstDayOfMonth.getMonth() + 1)}/${firstDayOfMonth.getDate()}/${firstDayOfMonth.getFullYear()} ${firstDayOfMonth.toLocaleTimeString('th-TH')}`;
-    const lastDayOfMonthStr = `${(lastDayOfMonth.getMonth() + 1)}/${lastDayOfMonth.getDate()}/${lastDayOfMonth.getFullYear()} ${lastDayOfMonth.toLocaleTimeString('th-TH')}`;
-
-    // ตั้งค่า query สำหรับดึงข้อมูลรายจ่าย
-    const expensesQuery = query(
-      collection(db, 'Expenses'),
-      where('time', '>=', firstDayOfMonthStr),
-      where('time', '<=', lastDayOfMonthStr)
-    );
-
-    // ฟังการเปลี่ยนแปลงแบบเรียลไทม์จาก Firebase
-    const unsubscribe = onSnapshot(expensesQuery, async (expenseSnapshot) => {
+  // ฟังก์ชันสำหรับลบรายการ
+  const removeTransaction = async (item, type) => {
+    try {
+      const existingData = await AsyncStorage.getItem(type);
+      const currentData = existingData ? JSON.parse(existingData) : [];
+      const updatedData = currentData.filter(transaction => transaction.title !== item.title && transaction.amount !== item.amount);
+      await AsyncStorage.setItem(type, JSON.stringify(updatedData));
+    } catch (error) {
+      console.error('Error removing data:', error);
+    }
+  };
+  useEffect(() => {
+    const fetchExpenses = async () => {
       try {
-        // ดึงข้อมูลไอคอนรายจ่ายจาก 'ExpenseCategories'
+
+        const today = new Date(); // วันที่ปัจจุบัน
+        // อันนี้คือทดลองดู
+        const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1); // วันแรกของเดือน
+        const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0); // วันสุดท้ายของเดือน
+
+        // แปลง firstDayOfMonth และ lastDayOfMonth ให้เป็นสตริงในรูปแบบเดียวกันกับที่เก็บใน Firestore
+        const firstDayOfMonthStr = `${(firstDayOfMonth.getMonth() + 1)}/${firstDayOfMonth.getDate()}/${firstDayOfMonth.getFullYear()}, ${firstDayOfMonth.toLocaleTimeString()}`;
+        const lastDayOfMonthStr = `${(lastDayOfMonth.getMonth() + 1)}/${lastDayOfMonth.getDate()}/${lastDayOfMonth.getFullYear()}, ${lastDayOfMonth.toLocaleTimeString()}`;
+
+        const expensesQuery = query(
+          collection(db, 'Expenses'),
+          where('time', '>=', firstDayOfMonthStr),
+          where('time', '<=', lastDayOfMonthStr)
+        );
+
+        // ดึงข้อมูลจาก 'ExpenseCategories'
         const expensesicon = await getDocs(collection(db, 'ExpenseCategories'));
         const expenseiconlist = expensesicon.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        console.log('Expense Icons:', expenseiconlist);
+        console.log('Fetched icon expense data:', expenseiconlist);
         setExpensesicon(expenseiconlist);
-  
-        // ดึงข้อมูลรายจ่าย
+
+        // ดึงข้อมูลจาก 'Expenses'
+        const expenseSnapshot = await getDocs(expensesQuery);
         let expenseList = expenseSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        console.log('Expenses:', expenseList); // แสดง log ข้อมูลรายจ่าย
-  
+        console.log('Fetched expense data:', expenseList);
+
         // เพิ่ม imageUrl ให้กับ expenseList ถ้า title ตรงกับ name
         const updatedExpenseList = expenseList.map(expense => {
           const matchedIcon = expenseiconlist.find(icon => icon.name === expense.title);
           return matchedIcon
             ? { ...expense, imageUrl: matchedIcon.imageUrl }
-            : expense; // ถ้าเจอ name ตรง ก็ใส่ imageUrl, ถ้าไม่เจอ ก็คืนค่า expense เดิม
+            : expense;  // ถ้าเจอ name ตรง ก็ใส่ imageUrl, ถ้าไม่เจอ ก็คืนค่า expense เดิม
         });
-        console.log('updateExpenses:', updatedExpenseList); // แสดง log ข้อมูลรายจ่าย
+
+        console.log('Updated expense data with imageUrl:', updatedExpenseList);
         setExpenses(updatedExpenseList);
       } catch (error) {
         console.error('Error fetching expenses:', error);
       } finally {
         setLoading(false); // หยุดการแสดง Loading เมื่อดึงข้อมูลเสร็จแล้ว
       }
-    });
+    };
 
-    return () => unsubscribe(); // ยกเลิกการสมัครรับข้อมูลเมื่อ component ถูกทำลาย
-}, []);
+    fetchExpenses();
+  }, []);
 
-
-  
 
   const handleDelete = async (item) => {
     Alert.alert(
@@ -77,7 +88,7 @@ const ExpenseScreen = () => {
             try {
               // ลบรายการจาก Firebase
               await deleteDoc(doc(db, 'Expenses', item.id)); // ใช้ item.id เพื่อระบุเอกสารที่จะลบ
-              
+
               // อัปเดตสถานะใน React
               setExpenses(prev => prev.filter(transaction => transaction.id !== item.id));
             } catch (error) {
@@ -102,13 +113,13 @@ const ExpenseScreen = () => {
     <View style={styles.container}>
       {expenses.length === 0 ? (
         <Text style={styles.text}>ไม่มีรายจ่าย</Text>
-      ) : (                                            
+      ) : (
         <FlatList
           data={expenses}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View style={styles.item}>
-              <View style={styles.img}> 
+              <View style={styles.img}>
                 <Image source={{ uri: item.imageUrl }} style={styles.image} />
               </View>
               <View style={styles.object2}>
@@ -119,11 +130,12 @@ const ExpenseScreen = () => {
                 <View style={styles.inobject}>
                   <Text style={styles.note}>Note: {item.note || 'N/A'}</Text>
                   <Text>{item.time ? new Date(item.time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false }) : 'N/A'} น.</Text>
+
                 </View>
               </View>
               <TouchableOpacity onPress={() => handleDelete(item)} style={styles.object3}>
-  <Ionicons name="trash-outline" size={24} color="red" />
-</TouchableOpacity>
+                <Ionicons name="trash-outline" size={24} color="red" />
+              </TouchableOpacity>
             </View>
           )}
         />
@@ -190,15 +202,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
+  time: {
+    fontSize: 12,
+    color: '#888',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   image: {
-    width: 45, 
-    height: 45, 
-    borderRadius: 8, 
+    width: 45,
+    height: 45,
+    borderRadius: 8,
     backgroundColor: "#f6f6f6",
   },
 });

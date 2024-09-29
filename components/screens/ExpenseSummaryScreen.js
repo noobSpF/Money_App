@@ -106,7 +106,7 @@ const ExpenseSummaryScreen = () => {
       >
         {months.map(month => (
         <Picker.Item key={month.value} label={month.label} value={month.value} />
-         ))}
+        ))}
       </Picker>
 
       <View style={styles.chartContainer}>
@@ -167,99 +167,99 @@ const ExpenseSummaryScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  picker: {
-    width: '80%',
-    marginBottom: 20,
-  },
-  chartContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  innerCircle: {
-    position: 'absolute',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'white',
-    left: 42,
-  },
-  totalText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  list: {
-    width: '100%',
-    marginTop: 20,
-  },
-  item: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 15,
-    backgroundColor: '#fff',
-    marginBottom: 10,
-    borderRadius: 0,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    alignItems: 'center',
-  },
-  amount: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: 'red',
-  },
-  img: {
-    flex: 1,
-  },
-  object2: {
-    flex: 4,
-  },
-  inobject: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    width: '100%',
-  },
-  image: {
-    width: 45,
-    height: 45,
-    borderRadius: 8,
-    backgroundColor: "#f6f6f6",
-  },
-  placeholderIcon: {
-    width: 45,
-    height: 45,
-    borderRadius: 8,
-    backgroundColor: "#f6f6f6",
-  },
-  title: {
-    fontSize: 18,
-  },
-  note: {
-    fontSize: 14,
-    color: 'gray',
-  },
-  picker: {
-    width: '80%', // ความกว้างของ Picker
-    height: 50, // ความสูงของ Picker
-    borderColor: '#ccc', // สีของขอบ
-    borderWidth: 1, // ความหนาของขอบ
-    borderRadius: 8, // รัศมีของมุม
-    backgroundColor: '#f0f0f0', // สีพื้นหลัง
-    marginBottom: 20, // ระยะห่างด้านล่าง
-    paddingHorizontal: 10, // ระยะห่างด้านข้าง
-    textAlign: 'center',
-    fontSize: 18,
-  },
+container: {
+  flex: 1,
+  alignItems: 'center',
+},
+picker: {
+  width: '80%',
+  marginBottom: 20,
+},
+chartContainer: {
+  justifyContent: 'center',
+  alignItems: 'center',
+  position: 'relative',
+},
+innerCircle: {
+  position: 'absolute',
+  justifyContent: 'center',
+  alignItems: 'center',
+  width: 120,
+  height: 120,
+  borderRadius: 60,
+  backgroundColor: 'white',
+  left: 42,
+},
+totalText: {
+  fontSize: 18,
+  fontWeight: 'bold',
+},
+list: {
+  width: '100%',
+  marginTop: 20,
+},
+item: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  padding: 15,
+  backgroundColor: '#fff',
+  marginBottom: 10,
+  borderRadius: 0,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 8,
+  elevation: 5,
+  alignItems: 'center',
+},
+amount: {
+  fontSize: 18,
+  fontWeight: 'bold',
+  color: 'red',
+},
+img: {
+  flex: 1,
+},
+object2: {
+  flex: 4,
+},
+inobject: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  paddingHorizontal: 10,
+  width: '100%',
+},
+image: {
+  width: 45,
+  height: 45,
+  borderRadius: 8,
+  backgroundColor: "#f6f6f6",
+},
+placeholderIcon: {
+  width: 45,
+  height: 45,
+  borderRadius: 8,
+  backgroundColor: "#f6f6f6",
+},
+title: {
+  fontSize: 18,
+},
+note: {
+  fontSize: 14,
+  color: 'gray',
+},
+picker: {
+  width: '80%', // ความกว้างของ Picker
+  height: 50, // ความสูงของ Picker
+  borderColor: '#ccc', // สีของขอบ
+  borderWidth: 1, // ความหนาของขอบ
+  borderRadius: 8, // รัศมีของมุม
+  backgroundColor: '#f0f0f0', // สีพื้นหลัง
+  marginBottom: 20, // ระยะห่างด้านล่าง
+  paddingHorizontal: 10, // ระยะห่างด้านข้าง
+  textAlign: 'center',
+  fontSize: 18,
+},
 });
 
 export default ExpenseSummaryScreen;
