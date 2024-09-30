@@ -85,9 +85,6 @@ const HomeScreen = ({ route }) => {
       console.error('Error saving transaction:', error);
     }
   };
-  const navigateToSummary = (type) => {
-    navigation.navigate('Summary', { type });
-  };
 
   return (
     <View style={styles.container}>
